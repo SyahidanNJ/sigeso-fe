@@ -23,8 +23,8 @@ api.interceptors.response.use(
   },
   (e) => {
     const d = e.response?.data;
-    if (d && d.success === false) {
-      e.userMessage = `${d.error?.message || 'Gagal'} (${d.error?.code || ''} · ${d.requestId || ''})`;
+    if (d && d.status === false) {
+      e.userMessage = `${d.message || 'Gagal'} (${d.code || ''} · ${d.requestId || ''})`;
     } else {
       e.userMessage = `Jaringan bermasalah (${e.message}).`;
     }
