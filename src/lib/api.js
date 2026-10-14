@@ -4,6 +4,10 @@ export function newRequestId() {
   return `req-${Math.random().toString(36).slice(2, 10)}`;
 }
 
+// Bus notifikasi global: diisi ToastProvider. Setiap klik aksi (non-GET)
+// otomatis memunculkan respons sukses/gagal + requestId.
+export const pesanBus = { dorong: null };
+
 const api = axios.create({ baseURL: import.meta.env.VITE_API_URL });
 api.interceptors.request.use((c) => {
   c.headers['X-Request-ID'] = newRequestId();
@@ -12,12 +16,19 @@ api.interceptors.request.use((c) => {
   return c;
 });
 api.interceptors.response.use(
-  (r) => r,
+  (r) => {
+    const m = (r.config.method || 'get').toLowerCase();
+    if (m !== 'get' && pesanBus.dorong) pesanBus.dorong(r.data?.message || 'Berhasil.', 'ok');
+    return r;
+  },
   (e) => {
     const d = e.response?.data;
     if (d && d.success === false) {
       e.userMessage = `${d.error?.message || 'Gagal'} (${d.error?.code || ''} · ${d.requestId || ''})`;
+    } else {
+      e.userMessage = `Jaringan bermasalah (${e.message}).`;
     }
+    if (pesanBus.dorong) pesanBus.dorong(e.userMessage, 'gagal');
     return Promise.reject(e);
   }
 );

@@ -1,5 +1,7 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import ErrorBoundary from './components/ErrorBoundary';
+import ToastProvider, { useToast } from './components/Toast';
+import { pesanBus } from './lib/api';
 import Layout from './components/Layout';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
@@ -11,10 +13,17 @@ import Ujian from './pages/Ujian';
 import Cetak from './pages/Cetak';
 import Nilai from './pages/Nilai';
 
+function Daftarkan() {
+  pesanBus.dorong = useToast();
+  return null;
+}
+
 export default function App() {
   return (
     <ErrorBoundary>
-      <BrowserRouter>
+      <ToastProvider>
+        <Daftarkan />
+        <BrowserRouter>
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route element={<Layout />}>
@@ -29,6 +38,7 @@ export default function App() {
           </Route>
         </Routes>
       </BrowserRouter>
+      </ToastProvider>
     </ErrorBoundary>
   );
 }
