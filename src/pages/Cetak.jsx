@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import api from '../lib/api';
 import Panduan from '../components/Panduan';
+import Kosong from '../components/Kosong';
 
 export default function Cetak() {
   const [ujian, setUjian] = useState([]);
@@ -41,7 +42,7 @@ export default function Cetak() {
     <>
       <Panduan id="cetak" steps={['Pilih ujian.', 'Tekan Cetak semua siswa, unduh PDF-nya untuk difotokopi.', 'Kalau ada kertas rusak, tekan Cetak ulang pada nama anak itu.']} />
     <div className="kartu">
-      <h2>Cetak lembar (satu-lembar ber-QR)</h2>
+      <div className="kepala"><h2>Cetak lembar</h2><span className="sub">satu-lembar ber-QR per siswa</span></div>
       {msg && <p className="pesan gagal">{msg}</p>}
       <div className="baris">
         <div><div className="lbl">Pilih ujian</div><select value={aktif} onChange={(e) => setAktif(e.target.value)}>
@@ -50,10 +51,12 @@ export default function Cetak() {
         <div><div className="lbl">&nbsp;</div><button onClick={cetak} disabled={loading || !aktif}>{loading ? 'Mencetak...' : 'Cetak semua siswa'}</button></div>
       </div>
       {hasil && <p><a href={`${import.meta.env.VITE_API_URL.replace('/api/v1', '')}${hasil}`} target="_blank" rel="noreferrer">Unduh PDF</a></p>}
+      {lembar.length === 0 ? <Kosong teks="Belum ada lembar. Pilih ujian lalu tekan Cetak semua siswa." /> : (
       <table>
-        <thead><tr><th>Siswa</th><th>NIS</th><th>Cetak ke-</th><th></th></tr></thead>
-        <tbody>{lembar.map((l) => <tr key={l.id}><td>{l.name}</td><td>{l.nis}</td><td>{l.print_count}</td><td><button onClick={() => cetakUlang(l.id)}>Cetak ulang</button></td></tr>)}</tbody>
+        <thead><tr><th>Siswa</th><th>NIS</th><th>Cetak</th><th></th></tr></thead>
+        <tbody>{lembar.map((l) => <tr key={l.id}><td>{l.name}</td><td>{l.nis}</td><td><span className="lencana l-abu">{l.print_count}x</span></td><td><button onClick={() => cetakUlang(l.id)}>Cetak ulang</button></td></tr>)}</tbody>
       </table>
+      )}
     </div>
     </>
   );

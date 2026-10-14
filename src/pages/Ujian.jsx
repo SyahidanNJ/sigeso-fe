@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import api from '../lib/api';
 import Panduan from '../components/Panduan';
+import Kosong from '../components/Kosong';
 
 export default function Ujian() {
   const [ujian, setUjian] = useState([]);
@@ -49,12 +50,14 @@ export default function Ujian() {
     <div>
       <Panduan id="ujian" steps={['Ketik judul ujian, tekan + Ujian.', 'Klik Pilih pada ujian itu.', 'Centang soal yang mau dipakai, tekan Simpan pilihan.']} />
       <div className="kartu">
-        <h2>Ujian</h2>
+        <div className="kepala"><h2>Ujian</h2><span className="sub">{ujian.length} ujian</span></div>
         {msg && <p className="pesan gagal">{msg}</p>}
+        {ujian.length === 0 ? <Kosong teks="Belum ada ujian. Buat lewat form di bawah." /> : (
         <table>
           <thead><tr><th>Judul</th><th>N soal</th><th></th></tr></thead>
-          <tbody>{ujian.map((u) => <tr key={u.id}><td>{u.title}</td><td>{u.n_soal}</td><td><button onClick={async () => { setAktif(u); const it = await api.get(`/exams/${u.id}/items`); setDipilih(it.data.data.map((x) => x.id)); }}>Pilih</button></td></tr>)}</tbody>
+          <tbody>{ujian.map((u) => <tr key={u.id} style={aktif?.id === u.id ? { background: '#e0efec' } : null}><td>{u.title}</td><td>{u.n_soal}</td><td><button onClick={async () => { setAktif(u); const it = await api.get(`/exams/${u.id}/items`); setDipilih(it.data.data.map((x) => x.id)); }}>Pilih</button></td></tr>)}</tbody>
         </table>
+        )}
         <form onSubmit={buat} style={{ marginTop: 8 }}>
           <div className="baris">
             <div><div className="lbl">Judul ujian</div><input placeholder="cth: Ulangan Bab 1" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} /></div>
@@ -65,11 +68,13 @@ export default function Ujian() {
       </div>
       {aktif && (
         <div className="kartu">
-          <h2>Tempel soal ke: {aktif.title} ({dipilih.length} dipilih)</h2>
+          <div className="kepala"><h2>Tempel soal ke: {aktif.title}</h2><span className="lencana l-teal">{dipilih.length} dipilih</span></div>
+          {bank.length === 0 ? <Kosong teks="Bank soal kosong. Buat dulu di halaman Bank Soal." /> : (
           <table>
             <thead><tr><th></th><th>Tipe</th><th>Soal</th></tr></thead>
             <tbody>{bank.map((q) => <tr key={q.id}><td><input type="checkbox" checked={dipilih.includes(q.id)} onChange={() => centang(q.id)} /></td><td>{q.qtype}</td><td>{q.text.slice(0, 80)}</td></tr>)}</tbody>
           </table>
+          )}
           <button onClick={simpan} disabled={loading} style={{ marginTop: 8 }}>{loading ? 'Menyimpan...' : 'Simpan pilihan'}</button>
         </div>
       )}
