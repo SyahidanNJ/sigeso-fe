@@ -12,7 +12,7 @@ export default function Login() {
     setLoading(true);
     setMsg('');
     try {
-      const r = await api.post('/auth/login', form);
+      const r = await api.post('/auth/login', { email: form.email.trim(), password: form.password });
       localStorage.setItem('sigeso_token', r.data.data.token);
       nav('/');
     } catch (err) {

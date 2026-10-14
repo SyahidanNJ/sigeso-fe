@@ -19,7 +19,7 @@ export default function Register() {
     e.preventDefault();
     setLoading(true);
     try {
-      const r = await api.post('/auth/register', { ...form, institution_id: Number(form.institution_id) });
+      const r = await api.post('/auth/register', { name: form.name.trim(), email: form.email.trim(), password: form.password, institution_id: Number(form.institution_id) });
       localStorage.setItem('sigeso_token', r.data.data.token);
       nav('/');
     } finally {
