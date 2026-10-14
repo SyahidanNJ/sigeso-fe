@@ -9,6 +9,7 @@ import Materi from './pages/Materi';
 import BankSoal from './pages/BankSoal';
 import Ujian from './pages/Ujian';
 import Cetak from './pages/Cetak';
+import Nilai from './pages/Nilai';
 
 export default function App() {
   return (
@@ -24,6 +25,7 @@ export default function App() {
             <Route path="/bank" element={<BankSoal />} />
             <Route path="/ujian" element={<Ujian />} />
             <Route path="/cetak" element={<Cetak />} />
+            <Route path="/nilai" element={<Nilai />} />
           </Route>
         </Routes>
       </BrowserRouter>

@@ -17,6 +17,7 @@ export default function Layout() {
         <NavLink to="/bank" className={({ isActive }) => (isActive ? 'aktif' : '')}>Bank Soal</NavLink>
         <NavLink to="/ujian" className={({ isActive }) => (isActive ? 'aktif' : '')}>Ujian</NavLink>
         <NavLink to="/cetak" className={({ isActive }) => (isActive ? 'aktif' : '')}>Cetak</NavLink>
+        <NavLink to="/nilai" className={({ isActive }) => (isActive ? 'aktif' : '')}>Nilai</NavLink>
         <button onClick={keluar} style={{ marginTop: 'auto', background: '#334155' }}>Keluar</button>
       </nav>
       <main className="konten">
