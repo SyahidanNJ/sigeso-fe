@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import api from '../lib/api';
+import api, { unduhBerkas } from '../lib/api';
 import Panduan from '../components/Panduan';
 import Kosong from '../components/Kosong';
 
@@ -52,7 +52,7 @@ export default function Nilai() {
     try {
       const r = await api.get(`/exams/${exam}/export?format=${format}`);
       setMsg(r.data.message);
-      window.open(`${import.meta.env.VITE_API_URL.replace('/api/v1', '')}${r.data.data.download}`, '_blank');
+      await unduhBerkas(r.data.data.download);
     } catch (e) { setMsg(e.userMessage || e.message); } finally { setLoading(false); }
   }
   async function kunci(id) {

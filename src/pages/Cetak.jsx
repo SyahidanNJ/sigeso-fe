@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import api from '../lib/api';
+import api, { unduhBerkas } from '../lib/api';
 import Panduan from '../components/Panduan';
 import Kosong from '../components/Kosong';
 
@@ -29,6 +29,20 @@ export default function Cetak() {
       muatLembar(aktif);
     } catch (e) { setMsg(e.userMessage || e.message); } finally { setLoading(false); }
   }
+  async function unduh(path) {
+    setLoading(true);
+    try {
+      await unduhBerkas(path);
+    } catch (e) { setMsg(e.userMessage || e.message); } finally { setLoading(false); }
+  }
+  async function dokumenSoal(format) {
+    setLoading(true);
+    try {
+      const r = await api.get(`/exams/${aktif}/dokumen?format=${format}`);
+      setMsg(r.data.message);
+      await unduhBerkas(r.data.data.download);
+    } catch (e) { setMsg(e.userMessage || e.message); } finally { setLoading(false); }
+  }
   async function cetakUlang(id) {
     setLoading(true);
     try {
@@ -50,7 +64,11 @@ export default function Cetak() {
         </select></div>
         <div><div className="lbl">&nbsp;</div><button onClick={cetak} disabled={loading || !aktif}>{loading ? 'Mencetak...' : 'Cetak semua siswa'}</button></div>
       </div>
-      {hasil && <p><a href={`${import.meta.env.VITE_API_URL.replace('/api/v1', '')}${hasil}`} target="_blank" rel="noreferrer">Unduh PDF</a></p>}
+      {hasil && <div className="baris"><div><div className="lbl">&nbsp;</div><button className="btn2" onClick={() => unduh(hasil)}>Unduh PDF lembar siswa</button></div></div>}
+      <div className="baris">
+        <div><div className="lbl">Dokumen soal (tanpa nama siswa)</div><button className="btn2" onClick={() => dokumenSoal('pdf')} disabled={loading || !aktif}>Soal PDF</button></div>
+        <div><div className="lbl">&nbsp;</div><button className="btn2" onClick={() => dokumenSoal('docx')} disabled={loading || !aktif}>Soal Word</button></div>
+      </div>
       {lembar.length === 0 ? <Kosong teks="Belum ada lembar. Pilih ujian lalu tekan Cetak semua siswa." /> : (
       <table>
         <thead><tr><th>Siswa</th><th>NIS</th><th>Cetak</th><th></th></tr></thead>

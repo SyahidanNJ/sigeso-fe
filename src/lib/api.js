@@ -39,4 +39,17 @@ export async function postClientError(err) {
   } catch { /* abaikan */ }
 }
 
+// Unduh file auth (link biasa tak membawa token sehingga 401).
+export async function unduhBerkas(path) {
+  const r = await api.get(path, { responseType: 'blob' });
+  const url = URL.createObjectURL(new Blob([r.data]));
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = path.split('/').pop();
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 5000);
+}
+
 export default api;
