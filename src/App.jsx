@@ -6,6 +6,8 @@ import Dashboard from './pages/Dashboard';
 import Sekolah from './pages/Sekolah';
 import Kelas from './pages/Kelas';
 import Materi from './pages/Materi';
+import BankSoal from './pages/BankSoal';
+import Ujian from './pages/Ujian';
 
 export default function App() {
   return (
@@ -18,6 +20,8 @@ export default function App() {
             <Route path="/sekolah" element={<Sekolah />} />
             <Route path="/kelas" element={<Kelas />} />
             <Route path="/materi" element={<Materi />} />
+            <Route path="/bank" element={<BankSoal />} />
+            <Route path="/ujian" element={<Ujian />} />
           </Route>
         </Routes>
       </BrowserRouter>
