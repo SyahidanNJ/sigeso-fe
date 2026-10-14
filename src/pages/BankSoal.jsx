@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import api from '../lib/api';
+import Panduan from '../components/Panduan';
 
 export default function BankSoal() {
   const [daftar, setDaftar] = useState([]);
@@ -27,16 +28,17 @@ export default function BankSoal() {
 
   return (
     <div>
+      <Panduan id="bank" steps={['Isi nomor Subbab dan jumlah soal, tekan Generate, tunggu sebentar.', 'Baca hasilnya satu-satu.', 'Soal yang jelek dihapus saja.']} />
       <div className="kartu">
         <h2>Generate soal (AI)</h2>
         {msg && <p className="pesan gagal">{msg}</p>}
         <form onSubmit={generate}>
           <div className="baris">
-            <input placeholder="ID subbab" type="number" value={gen.sub_chapter_id} onChange={(e) => setGen({ ...gen, sub_chapter_id: e.target.value })} />
-            <input placeholder="Jumlah" type="number" min="1" max="20" value={gen.count} onChange={(e) => setGen({ ...gen, count: e.target.value })} />
-            <select value={gen.difficulty} onChange={(e) => setGen({ ...gen, difficulty: e.target.value })}>
+            <div><div className="lbl">Nomor Subbab</div><input placeholder="cth: 1" type="number" value={gen.sub_chapter_id} onChange={(e) => setGen({ ...gen, sub_chapter_id: e.target.value })} /></div>
+            <div><div className="lbl">Jumlah soal (1–20)</div><input placeholder="cth: 5" type="number" min="1" max="20" value={gen.count} onChange={(e) => setGen({ ...gen, count: e.target.value })} /></div>
+            <div><div className="lbl">Tingkat kesulitan</div><select value={gen.difficulty} onChange={(e) => setGen({ ...gen, difficulty: e.target.value })}>
               <option value="mudah">mudah</option><option value="sedang">sedang</option><option value="sukar">sukar</option>
-            </select>
+            </select></div>
           </div>
           <button disabled={loading}>{loading ? 'Membuat... (±30 dtk)' : 'Generate'}</button>
         </form>

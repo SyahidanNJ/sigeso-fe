@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import api from '../lib/api';
+import Panduan from '../components/Panduan';
 
 export default function Nilai() {
   const [ujian, setUjian] = useState([]);
@@ -64,21 +65,22 @@ export default function Nilai() {
 
   return (
     <div>
+      <Panduan id="nilai" steps={['Lihat kode QR di kertas anak, ketik di kolom QR.', 'Pilih foto kertasnya (bisa lebih dari 1), tekan Unggah & nilai.', 'Periksa nilainya, ubah kalau salah, lalu tekan Kunci.']} />
       <div className="kartu">
         <h2>Unggah foto jawaban</h2>
         {msg && <p className="pesan gagal">{msg}</p>}
         <div className="baris">
-          <input placeholder="Kode QR (cth SGxxx:p1)" value={qr} onChange={(e) => setQr(e.target.value)} />
-          <input type="file" accept=".jpg,.jpeg,.png,.webp" multiple onChange={(e) => setFiles(e.target.files)} />
-          <button onClick={unggah} disabled={loading}>{loading ? 'Menilai...' : 'Unggah & nilai'}</button>
+          <div><div className="lbl">Kode QR dari kertas</div><input placeholder="cth: SGxxx:p1" value={qr} onChange={(e) => setQr(e.target.value)} /></div>
+          <div><div className="lbl">Foto lembar jawaban (bisa pilih lebih dari 1)</div><input type="file" accept=".jpg,.jpeg,.png,.webp" multiple onChange={(e) => setFiles(e.target.files)} /></div>
+          <div><div className="lbl">&nbsp;</div><button onClick={unggah} disabled={loading}>{loading ? 'Menilai...' : 'Unggah & nilai'}</button></div>
         </div>
       </div>
       <div className="kartu">
         <h2>Review nilai</h2>
         <div className="baris">
-          <select value={exam} onChange={(e) => { setExam(e.target.value); muat(e.target.value); }}>
+          <div><div className="lbl">Pilih ujian</div><select value={exam} onChange={(e) => { setExam(e.target.value); muat(e.target.value); }}>
             {ujian.map((u) => <option key={u.id} value={u.id}>{u.title}</option>)}
-          </select>
+          </select></div>
           <button onClick={() => ekspor('xlsx')} disabled={loading}>Excel</button>
           <button onClick={() => ekspor('pdf')} disabled={loading}>PDF</button>
           <button onClick={() => ekspor('docx')} disabled={loading}>Word</button>
@@ -91,7 +93,7 @@ export default function Nilai() {
               <td><input type="number" min="0" max="100" value={skor[s.id] ?? ''} onChange={(e) => setSkor({ ...skor, [s.id]: e.target.value })} style={{ width: 80 }} /></td>
               <td>{s.status}</td>
               <td>
-                {s.status !== 'final' && <><button onClick={() => koreksi(s.id)}>Simpan</button> <button onClick={() => kunci(s.id)} style={{ background: '#166534' }}>Kunci</button></>}
+                {s.status !== 'final' && <><button onClick={() => koreksi(s.id)}>Simpan</button> <button onClick={() => kunci(s.id)} style={{ background: '#0f766e' }}>Kunci</button></>}
               </td>
             </tr>
           ))}</tbody>

@@ -18,15 +18,15 @@ api.interceptors.request.use((c) => {
 api.interceptors.response.use(
   (r) => {
     const m = (r.config.method || 'get').toLowerCase();
-    if (m !== 'get' && pesanBus.dorong) pesanBus.dorong(r.data?.message || 'Berhasil.', 'ok');
+    if (m !== 'get' && !r.config.silent && pesanBus.dorong) pesanBus.dorong(r.data?.message || 'Berhasil.', 'ok');
     return r;
   },
   (e) => {
     const d = e.response?.data;
     if (d && d.status === false) {
-      e.userMessage = `${d.message || 'Gagal'} (${d.code || ''} · ${d.requestId || ''})`;
+      e.userMessage = d.message || 'Gagal.';
     } else {
-      e.userMessage = `Jaringan bermasalah (${e.message}).`;
+      e.userMessage = 'Jaringan bermasalah, periksa internet lalu coba lagi.';
     }
     if (pesanBus.dorong) pesanBus.dorong(e.userMessage, 'gagal');
     return Promise.reject(e);

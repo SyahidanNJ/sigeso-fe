@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import api from '../lib/api';
+import Panduan from '../components/Panduan';
 
 export default function Cetak() {
   const [ujian, setUjian] = useState([]);
@@ -37,14 +38,16 @@ export default function Cetak() {
   }
 
   return (
+    <>
+      <Panduan id="cetak" steps={['Pilih ujian.', 'Tekan Cetak semua siswa, unduh PDF-nya untuk difotokopi.', 'Kalau ada kertas rusak, tekan Cetak ulang pada nama anak itu.']} />
     <div className="kartu">
       <h2>Cetak lembar (satu-lembar ber-QR)</h2>
       {msg && <p className="pesan gagal">{msg}</p>}
       <div className="baris">
-        <select value={aktif} onChange={(e) => setAktif(e.target.value)}>
+        <div><div className="lbl">Pilih ujian</div><select value={aktif} onChange={(e) => setAktif(e.target.value)}>
           {ujian.map((u) => <option key={u.id} value={u.id}>{u.title} ({u.n_soal} soal)</option>)}
-        </select>
-        <button onClick={cetak} disabled={loading || !aktif}>{loading ? 'Mencetak...' : 'Cetak semua siswa'}</button>
+        </select></div>
+        <div><div className="lbl">&nbsp;</div><button onClick={cetak} disabled={loading || !aktif}>{loading ? 'Mencetak...' : 'Cetak semua siswa'}</button></div>
       </div>
       {hasil && <p><a href={`${import.meta.env.VITE_API_URL.replace('/api/v1', '')}${hasil}`} target="_blank" rel="noreferrer">Unduh PDF</a></p>}
       <table>
@@ -52,5 +55,6 @@ export default function Cetak() {
         <tbody>{lembar.map((l) => <tr key={l.id}><td>{l.name}</td><td>{l.nis}</td><td>{l.print_count}</td><td><button onClick={() => cetakUlang(l.id)}>Cetak ulang</button></td></tr>)}</tbody>
       </table>
     </div>
+    </>
   );
 }

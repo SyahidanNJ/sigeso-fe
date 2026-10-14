@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import api from '../lib/api';
+import Panduan from '../components/Panduan';
 
 export default function Ujian() {
   const [ujian, setUjian] = useState([]);
@@ -46,6 +47,7 @@ export default function Ujian() {
 
   return (
     <div>
+      <Panduan id="ujian" steps={['Ketik judul ujian, tekan + Ujian.', 'Klik Pilih pada ujian itu.', 'Centang soal yang mau dipakai, tekan Simpan pilihan.']} />
       <div className="kartu">
         <h2>Ujian</h2>
         {msg && <p className="pesan gagal">{msg}</p>}
@@ -55,8 +57,8 @@ export default function Ujian() {
         </table>
         <form onSubmit={buat} style={{ marginTop: 8 }}>
           <div className="baris">
-            <input placeholder="Judul ujian" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
-            <input placeholder="ID kelas" type="number" value={form.class_id} onChange={(e) => setForm({ ...form, class_id: e.target.value })} />
+            <div><div className="lbl">Judul ujian</div><input placeholder="cth: Ulangan Bab 1" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} /></div>
+            <div><div className="lbl">Nomor kelas</div><input placeholder="cth: 1" type="number" value={form.class_id} onChange={(e) => setForm({ ...form, class_id: e.target.value })} /></div>
           </div>
           <button disabled={loading}>+ Ujian</button>
         </form>

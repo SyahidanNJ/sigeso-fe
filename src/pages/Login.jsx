@@ -25,8 +25,10 @@ export default function Login() {
     <div style={{ maxWidth: 360, margin: '60px auto' }}>
       <h1>Sigeso</h1>
       <form onSubmit={submit}>
-        <input placeholder="Email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} style={{ width: '100%', marginBottom: 8 }} />
-        <input placeholder="Password" type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} style={{ width: '100%', marginBottom: 8 }} />
+        <div className="lbl">Email</div>
+        <input placeholder="cth: nama@sekolah.id" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} style={{ width: '100%', marginBottom: 8 }} />
+        <div className="lbl">Kata sandi</div>
+        <input placeholder="Ketik kata sandi" type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} style={{ width: '100%', marginBottom: 8 }} />
         <button disabled={loading}>{loading ? 'Masuk...' : 'Masuk'}</button>
       </form>
       {msg && <p>{msg}</p>}

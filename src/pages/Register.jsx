@@ -30,9 +30,13 @@ export default function Register() {
     <div style={{ maxWidth: 360, margin: '60px auto' }}>
       <h1>Daftar akun guru</h1>
       <form onSubmit={submit}>
-        <input placeholder="Nama" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
-        <input placeholder="Email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
-        <input placeholder="Password (min 6)" type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
+        <div className="lbl">Nama lengkap</div>
+        <input placeholder="cth: Ibu Ani" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+        <div className="lbl">Email</div>
+        <input placeholder="cth: nama@sekolah.id" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
+        <div className="lbl">Kata sandi (minimal 6 huruf)</div>
+        <input placeholder="Ketik kata sandi" type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
+        <div className="lbl">Sekolah</div>
         <select value={form.institution_id} onChange={(e) => setForm({ ...form, institution_id: e.target.value })}>
           {sekolah.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
         </select>

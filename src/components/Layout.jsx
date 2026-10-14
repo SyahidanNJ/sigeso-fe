@@ -18,7 +18,7 @@ export default function Layout() {
         <NavLink to="/ujian" className={({ isActive }) => (isActive ? 'aktif' : '')}>Ujian</NavLink>
         <NavLink to="/cetak" className={({ isActive }) => (isActive ? 'aktif' : '')}>Cetak</NavLink>
         <NavLink to="/nilai" className={({ isActive }) => (isActive ? 'aktif' : '')}>Nilai</NavLink>
-        <button onClick={keluar} style={{ marginTop: 'auto', background: '#334155' }}>Keluar</button>
+        <button onClick={keluar} style={{ marginTop: 'auto', background: '#134e4a' }}>Keluar</button>
       </nav>
       <main className="konten">
         <Outlet />

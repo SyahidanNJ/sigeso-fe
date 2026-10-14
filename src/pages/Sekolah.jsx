@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import api from '../lib/api';
+import Panduan from '../components/Panduan';
 
 export default function Sekolah() {
   const [data, setData] = useState([]);
@@ -9,6 +10,7 @@ export default function Sekolah() {
   }, []);
   return (
     <div className="kartu">
+      <Panduan id="sekolah" steps={['Halaman ini menampilkan data sekolah Anda.', 'Untuk mengubahnya, hubungi admin sekolah.']} />
       <h2>Sekolah / Institusi</h2>
       {msg && <p className="pesan gagal">{msg}</p>}
       <table>

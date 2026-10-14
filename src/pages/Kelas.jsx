@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
 import api from '../lib/api';
+import Panduan from '../components/Panduan';
 
 export default function Kelas() {
   const [kelas, setKelas] = useState([]);
   const [aktif, setAktif] = useState(null);
   const [siswa, setSiswa] = useState([]);
-  const [form, setForm] = useState({ name: '', academic_year: '2026/2027', level: 7 });
+  const [form, setForm] = useState({ name: '', academic_year: '2026/2027' });
   const [csv, setCsv] = useState('Budi,1001\nAni,1002');
   const [msg, setMsg] = useState('');
   const [loading, setLoading] = useState(false);
@@ -27,7 +28,7 @@ export default function Kelas() {
     e.preventDefault();
     setLoading(true);
     try {
-      await api.post('/classes', { ...form, level: Number(form.level) });
+      await api.post('/classes', { name: form.name, academic_year: form.academic_year });
       setMsg('');
       muatKelas();
     } catch (err) { setMsg(err.userMessage || err.message); } finally { setLoading(false); }
@@ -45,17 +46,17 @@ export default function Kelas() {
 
   return (
     <div>
+      <Panduan id="kelas" steps={['Tekan tombol nama kelas untuk memilihnya.', 'Tulis daftar siswa di kotak (satu baris satu anak, contoh: Budi,1001), lalu tekan Impor.', 'Pastikan nama anak sudah muncul di tabel.']} />
       <div className="kartu">
         <h2>Kelas</h2>
         {msg && <p className="pesan gagal">{msg}</p>}
         <div className="baris">
-          {kelas.map((k) => <button key={k.id} onClick={() => setAktif(k)} style={{ background: aktif?.id === k.id ? '#1d4ed8' : '#64748b' }}>{k.name}</button>)}
+          {kelas.map((k) => <button key={k.id} onClick={() => setAktif(k)} style={{ background: aktif?.id === k.id ? '#0f766e' : '#475569' }}>{k.name}</button>)}
         </div>
         <form onSubmit={tambah} style={{ marginTop: 12 }}>
           <div className="baris">
-            <input placeholder="Nama kelas" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
-            <input placeholder="Tahun ajaran" value={form.academic_year} onChange={(e) => setForm({ ...form, academic_year: e.target.value })} />
-            <input placeholder="Tingkat" type="number" value={form.level} onChange={(e) => setForm({ ...form, level: e.target.value })} />
+            <div><div className="lbl">Nama kelas</div><input placeholder="cth: VII-A" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></div>
+            <div><div className="lbl">Tahun ajaran</div><input placeholder="cth: 2026/2027" value={form.academic_year} onChange={(e) => setForm({ ...form, academic_year: e.target.value })} /></div>
           </div>
           <button disabled={loading}>{loading ? 'Menyimpan...' : 'Tambah kelas'}</button>
         </form>
