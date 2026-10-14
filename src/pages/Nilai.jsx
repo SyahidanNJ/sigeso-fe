@@ -45,6 +45,14 @@ export default function Nilai() {
       muat(exam);
     } catch (e) { setMsg(e.userMessage || e.message); } finally { setLoading(false); }
   }
+  async function ekspor(format) {
+    setLoading(true);
+    try {
+      const r = await api.get(`/exams/${exam}/export?format=${format}`);
+      setMsg(r.data.message);
+      window.open(`${import.meta.env.VITE_API_URL.replace('/api/v1', '')}${r.data.data.download}`, '_blank');
+    } catch (e) { setMsg(e.userMessage || e.message); } finally { setLoading(false); }
+  }
   async function kunci(id) {
     setLoading(true);
     try {
@@ -71,6 +79,9 @@ export default function Nilai() {
           <select value={exam} onChange={(e) => { setExam(e.target.value); muat(e.target.value); }}>
             {ujian.map((u) => <option key={u.id} value={u.id}>{u.title}</option>)}
           </select>
+          <button onClick={() => ekspor('xlsx')} disabled={loading}>Excel</button>
+          <button onClick={() => ekspor('pdf')} disabled={loading}>PDF</button>
+          <button onClick={() => ekspor('docx')} disabled={loading}>Word</button>
         </div>
         <table>
           <thead><tr><th>Siswa</th><th>PG</th><th>Final</th><th>Status</th><th></th></tr></thead>
