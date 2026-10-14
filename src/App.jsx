@@ -4,6 +4,7 @@ import ToastProvider, { useToast } from './components/Toast';
 import { pesanBus } from './lib/api';
 import Layout from './components/Layout';
 import Login from './pages/Login';
+import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import Sekolah from './pages/Sekolah';
 import Kelas from './pages/Kelas';
@@ -26,6 +27,7 @@ export default function App() {
         <BrowserRouter>
         <Routes>
           <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
           <Route element={<Layout />}>
             <Route path="/" element={<Dashboard />} />
             <Route path="/sekolah" element={<Sekolah />} />

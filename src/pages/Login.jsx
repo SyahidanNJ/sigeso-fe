@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import api from '../lib/api';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 
 export default function Login() {
   const nav = useNavigate();
@@ -30,6 +30,7 @@ export default function Login() {
         <button disabled={loading}>{loading ? 'Masuk...' : 'Masuk'}</button>
       </form>
       {msg && <p>{msg}</p>}
+      <p><Link to="/register">Belum punya akun? Daftar</Link></p>
     </div>
   );
 }
