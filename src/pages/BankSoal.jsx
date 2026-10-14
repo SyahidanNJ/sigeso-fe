@@ -1,6 +1,11 @@
 import { useEffect, useState } from 'react';
 import api from '../lib/api';
 import Panduan from '../components/Panduan';
+import Kosong from '../components/Kosong';
+
+function lencanaTipe(t) {
+  return t === 'PG' ? 'l-teal' : t === 'ISIAN' ? 'l-amber' : 'l-abu';
+}
 
 export default function BankSoal() {
   const [daftar, setDaftar] = useState([]);
@@ -44,11 +49,13 @@ export default function BankSoal() {
         </form>
       </div>
       <div className="kartu">
-        <h2>Bank soal ({daftar.length})</h2>
+        <div className="kepala"><h2>Bank soal</h2><span className="sub">{daftar.length} soal tersimpan</span></div>
+        {daftar.length === 0 ? <Kosong teks="Bank masih kosong. Buat lewat Generate di atas." /> : (
         <table>
           <thead><tr><th>ID</th><th>Tipe</th><th>Soal</th><th>Kunci</th></tr></thead>
-          <tbody>{daftar.map((q) => <tr key={q.id}><td>{q.id}</td><td>{q.qtype}</td><td>{q.text.slice(0, 80)}</td><td>{q.answer_key}</td></tr>)}</tbody>
+          <tbody>{daftar.map((q) => <tr key={q.id}><td>{q.id}</td><td><span className={`lencana ${lencanaTipe(q.qtype)}`}>{q.qtype}</span></td><td>{q.text.slice(0, 80)}</td><td>{q.answer_key}</td></tr>)}</tbody>
         </table>
+        )}
       </div>
     </div>
   );

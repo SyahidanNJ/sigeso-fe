@@ -45,6 +45,7 @@ tbody tr:nth-child(even) { background: #f4faf8; }
 .kepala { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 16px; margin-bottom: 4px; }
 .kepala h2 { margin: 0; }
 .kepala .sub { color: #41605a; font-size: 15px; }
+.sub { color: #41605a; font-size: 15px; }
 .angka { display: flex; gap: 8px; flex-wrap: wrap; margin: 12px 0; }
 .stat { flex: 1; min-width: 120px; background: var(--kartu); border: 1px solid var(--garis); border-left: 6px solid var(--primer); border-radius: 12px; padding: 10px 14px; }
 .stat b { font-size: 24px; color: var(--sisi); display: block; }

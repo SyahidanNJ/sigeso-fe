@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import api from '../lib/api';
 import Panduan from '../components/Panduan';
+import Kosong from '../components/Kosong';
 
 export default function Materi() {
   const [mapel, setMapel] = useState([]);
@@ -63,11 +64,16 @@ export default function Materi() {
     } catch (e) { setMsg(e.userMessage || e.message); } finally { setLoading(false); }
   }
 
+  const cariNama = (arr, id) => (arr.find((x) => String(x.id) === String(id)) || {}).name;
+  const jejak = [cariNama(mapel, pilih.subject_id), cariNama(topik, pilih.topic_id), cariNama(bab, pilih.chapter_id)].filter(Boolean).join('  ›  ');
+
   return (
     <div>
+      <div className="kepala"><h2>Materi</h2><span className="sub">Mapel › Topik › Bab › Subbab</span></div>
       <Panduan id="materi" steps={['Pilih Mapel, lalu Topik, lalu Bab.', 'Kalau Subbab belum ada, ketik namanya lalu tekan + Subbab.', 'Klik nama Subbab, lalu Unggah file materi atau tempel link.']} />
       <div className="kartu">
         <h2>Materi: Mapel &gt; Topik &gt; Bab &gt; Subbab</h2>
+        {jejak && <p className="sub">Posisi: {jejak}</p>}
         {msg && <p className="pesan gagal">{msg}</p>}
         <div className="lbl">Nama baru (untuk mapel, topik, bab, atau subbab)</div>
         <div className="baris">
@@ -93,7 +99,11 @@ export default function Materi() {
           <button onClick={async () => { await api.post('/chapters', { topic_id: Number(pilih.topic_id), name: nama }); setMsg('Bab ditambah.'); }} disabled={loading}>+ Bab</button>
           <button onClick={async () => { const r = await api.post('/subchapters', { chapter_id: Number(pilih.chapter_id), name: nama }); setMsg('Subbab ditambah.'); setSub([...sub, r.data.data]); }} disabled={loading}>+ Subbab</button>
         </div>
-        <ul>{sub.map((s) => <li key={s.id}><button style={{ background: '#475569' }} onClick={() => { setPilih({ ...pilih, sub_chapter_id: s.id }); muatSumber(s.id); }}>{s.name}</button></li>)}</ul>
+        {sub.length === 0 ? (pilih.chapter_id ? <Kosong teks="Belum ada subbab di bab ini. Ketik namanya di atas lalu tekan + Subbab." /> : null) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 8 }}>
+          {sub.map((s) => <button key={s.id} className={pilih.sub_chapter_id === s.id ? '' : 'btn2'} style={{ textAlign: 'left' }} onClick={() => { setPilih({ ...pilih, sub_chapter_id: s.id }); muatSumber(s.id); }}>{s.name}</button>)}
+        </div>
+        )}
       </div>
       {pilih.sub_chapter_id && (
         <div className="kartu">
