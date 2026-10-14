@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import api from '../lib/api';
 import Panduan from '../components/Panduan';
+import Kosong from '../components/Kosong';
 
 export default function Kelas() {
   const [kelas, setKelas] = useState([]);
@@ -48,8 +49,9 @@ export default function Kelas() {
     <div>
       <Panduan id="kelas" steps={['Tekan tombol nama kelas untuk memilihnya.', 'Tulis daftar siswa di kotak (satu baris satu anak, contoh: Budi,1001), lalu tekan Impor.', 'Pastikan nama anak sudah muncul di tabel.']} />
       <div className="kartu">
-        <h2>Kelas</h2>
+        <div className="kepala"><h2>Kelas</h2><span className="sub">{kelas.length} kelas</span></div>
         {msg && <p className="pesan gagal">{msg}</p>}
+        {kelas.length === 0 && <Kosong teks="Belum ada kelas. Buat dulu lewat form di bawah." />}
         <div className="baris">
           {kelas.map((k) => <button key={k.id} onClick={() => setAktif(k)} style={{ background: aktif?.id === k.id ? '#0f766e' : '#475569' }}>{k.name}</button>)}
         </div>
@@ -63,11 +65,13 @@ export default function Kelas() {
       </div>
       {aktif && (
         <div className="kartu">
-          <h2>Siswa — {aktif.name}</h2>
+          <div className="kepala"><h2>Siswa — {aktif.name}</h2><span className="sub">{siswa.length} anak</span></div>
+          {siswa.length === 0 ? <Kosong teks="Belum ada siswa di kelas ini. Impor lewat form di bawah." /> : (
           <table>
             <thead><tr><th>Nama</th><th>NIS</th></tr></thead>
             <tbody>{siswa.map((s) => <tr key={s.id}><td>{s.name}</td><td>{s.nis}</td></tr>)}</tbody>
           </table>
+          )}
           <h3>Impor CSV (nama,nis per baris)</h3>
           <textarea rows={4} value={csv} onChange={(e) => setCsv(e.target.value)} />
           <button onClick={impor} disabled={loading}>{loading ? 'Mengimpor...' : 'Impor'}</button>

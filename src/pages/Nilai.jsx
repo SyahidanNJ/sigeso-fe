@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import api from '../lib/api';
 import Panduan from '../components/Panduan';
+import Kosong from '../components/Kosong';
 
 export default function Nilai() {
   const [ujian, setUjian] = useState([]);
@@ -63,8 +64,17 @@ export default function Nilai() {
     } catch (e) { setMsg(e.userMessage || e.message); } finally { setLoading(false); }
   }
 
+  const final = daftar.filter((s) => s.status === 'final');
+  const rata = final.length ? Math.round(final.reduce((a, s) => a + Number(s.final_score || 0), 0) / final.length) : '-';
+
   return (
     <div>
+      <div className="kepala"><h2>Nilai</h2><span className="sub">{daftar.length} siswa dinilai</span></div>
+      <div className="angka">
+        <div className="stat"><b>{rata}</b><span>Rata-rata final</span></div>
+        <div className="stat"><b>{final.length}</b><span>Sudah dikunci</span></div>
+        <div className="stat"><b>{daftar.length - final.length}</b><span>Perlu review</span></div>
+      </div>
       <Panduan id="nilai" steps={['Lihat kode QR di kertas anak, ketik di kolom QR.', 'Pilih foto kertasnya (bisa lebih dari 1), tekan Unggah & nilai.', 'Periksa nilainya, ubah kalau salah, lalu tekan Kunci.']} />
       <div className="kartu">
         <h2>Unggah foto jawaban</h2>
@@ -85,19 +95,21 @@ export default function Nilai() {
           <button onClick={() => ekspor('pdf')} disabled={loading}>PDF</button>
           <button onClick={() => ekspor('docx')} disabled={loading}>Word</button>
         </div>
+        {daftar.length === 0 ? <Kosong teks="Belum ada nilai. Unggah foto jawaban di atas." /> : (
         <table>
           <thead><tr><th>Siswa</th><th>PG</th><th>Final</th><th>Status</th><th></th></tr></thead>
           <tbody>{daftar.map((s) => (
             <tr key={s.id}>
               <td>{s.name}</td><td>{s.pg_score}</td>
               <td><input type="number" min="0" max="100" value={skor[s.id] ?? ''} onChange={(e) => setSkor({ ...skor, [s.id]: e.target.value })} style={{ width: 80 }} /></td>
-              <td>{s.status}</td>
+              <td><span className={`lencana ${s.status === 'final' ? 'l-hijau' : 'l-amber'}`}>{s.status === 'final' ? 'Terkunci' : 'Review'}</span></td>
               <td>
                 {s.status !== 'final' && <><button onClick={() => koreksi(s.id)}>Simpan</button> <button onClick={() => kunci(s.id)} style={{ background: '#0f766e' }}>Kunci</button></>}
               </td>
             </tr>
           ))}</tbody>
         </table>
+        )}
       </div>
     </div>
   );
