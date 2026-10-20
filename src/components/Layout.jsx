@@ -1,28 +1,110 @@
-import { NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { AppShell, Avatar, Burger, Group, Menu, NavLink, Text, UnstyledButton } from '@mantine/core';
+import { useDisclosure } from '@mantine/hooks';
+import { Outlet, useLocation, useNavigate } from 'react-router-dom';
+import api from '../lib/api';
+
+const MENU = [
+  { ke: '/', label: 'Dashboard' },
+  { ke: '/sekolah', label: 'Sekolah' },
+  { ke: '/kelas', label: 'Kelas & Siswa' },
+  { ke: '/soal', label: 'Bank Soal' },
+  { ke: '/cetak', label: 'Cetak' },
+  { ke: '/nilai', label: 'Nilai' },
+];
+
+const PERAN = { superadmin: 'Super Admin', admin: 'Admin', guru: 'Guru' };
+
+// Bergantian di header; panjangnya dijaga seragam agar tata letak tak bergeser.
+const KATA = [
+  'Buat soal ujian semakin mudah',
+  'Dari materi langsung jadi soal',
+  'Koreksi jawaban jadi lebih cepat',
+  'Cetak, koreksi, nilai otomatis',
+];
 
 export default function Layout() {
   const nav = useNavigate();
+  const lok = useLocation();
+  const [buka, { toggle }] = useDisclosure();
+  const [user, setUser] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('sigeso_user')) || null; } catch { return null; }
+  });
+
+  const [kata, setKata] = useState(0);
+  useEffect(() => {
+    const t = setInterval(() => setKata((v) => (v + 1) % KATA.length), 4000);
+    return () => clearInterval(t);
+  }, []);
+
+  // Header ikut berubah saat nama diganti dari halaman Profil.
+  useEffect(() => {
+    const muat = () => api.get('/auth/me').then((r) => setUser(r.data.data)).catch(() => {});
+    muat();
+    window.addEventListener('sigeso:user', muat);
+    return () => window.removeEventListener('sigeso:user', muat);
+  }, []);
+
   function keluar() {
     localStorage.removeItem('sigeso_token');
+    localStorage.removeItem('sigeso_user');
     nav('/login');
   }
+
+  const nama = user?.name || 'Pengguna';
+  const peran = PERAN[user?.role] || 'Guru';
+
   return (
-    <div className="layout">
-      <nav className="side">
-        <h2>Sigeso</h2>
-        <NavLink to="/" className={({ isActive }) => (isActive ? 'aktif' : '')}>Dashboard</NavLink>
-        <NavLink to="/sekolah" className={({ isActive }) => (isActive ? 'aktif' : '')}>Sekolah</NavLink>
-        <NavLink to="/kelas" className={({ isActive }) => (isActive ? 'aktif' : '')}>Kelas & Siswa</NavLink>
-        <NavLink to="/materi" className={({ isActive }) => (isActive ? 'aktif' : '')}>Materi</NavLink>
-        <NavLink to="/bank" className={({ isActive }) => (isActive ? 'aktif' : '')}>Bank Soal</NavLink>
-        <NavLink to="/ujian" className={({ isActive }) => (isActive ? 'aktif' : '')}>Ujian</NavLink>
-        <NavLink to="/cetak" className={({ isActive }) => (isActive ? 'aktif' : '')}>Cetak</NavLink>
-        <NavLink to="/nilai" className={({ isActive }) => (isActive ? 'aktif' : '')}>Nilai</NavLink>
-        <button onClick={keluar} style={{ marginTop: 'auto', background: '#134e4a' }}>Keluar</button>
-      </nav>
-      <main className="konten">
+    <AppShell
+      header={{ height: 56 }}
+      navbar={{ width: 230, breakpoint: 'sm', collapsed: { mobile: !buka } }}
+      padding="md"
+    >
+      <AppShell.Header>
+        <Group h="100%" px="md" justify="space-between" wrap="nowrap">
+          <Group gap="sm" wrap="nowrap">
+            <Burger opened={buka} onClick={toggle} hiddenFrom="sm" size="sm" />
+            <img src="/sigeso-logo.svg" alt="Sigeso" height={64} style={{ cursor: 'pointer' }} onClick={() => nav('/')} />
+            <Text
+              key={kata}
+              className="kata-masuk"
+              size="sm"
+              c="dimmed"
+              visibleFrom="sm"
+              style={{ borderLeft: '1px solid var(--garis)', paddingLeft: 14, minWidth: 250 }}
+            >
+              {KATA[kata]}
+            </Text>
+          </Group>
+          <Menu shadow="md" width={180} position="bottom-end">
+            <Menu.Target>
+              <UnstyledButton>
+                <Group gap="xs" wrap="nowrap">
+                  <Avatar color="teal" radius="xl" size="sm">{nama[0].toUpperCase()}</Avatar>
+                  <div>
+                    <Text size="sm" fw={600} lh={1.2}>{nama}</Text>
+                    <Text size="xs" c="dimmed" lh={1.2}>{peran}</Text>
+                  </div>
+                </Group>
+              </UnstyledButton>
+            </Menu.Target>
+            <Menu.Dropdown>
+              <Menu.Label>{nama} — {peran}</Menu.Label>
+              <Menu.Item onClick={() => nav('/profil')}>Profil</Menu.Item>
+              <Menu.Divider />
+              <Menu.Item color="red" onClick={keluar}>Keluar</Menu.Item>
+            </Menu.Dropdown>
+          </Menu>
+        </Group>
+      </AppShell.Header>
+      <AppShell.Navbar p="md">
+        {MENU.map((m) => (
+          <NavLink key={m.ke} label={m.label} active={lok.pathname === m.ke} onClick={() => nav(m.ke)} />
+        ))}
+      </AppShell.Navbar>
+      <AppShell.Main>
         <Outlet />
-      </main>
-    </div>
+      </AppShell.Main>
+    </AppShell>
   );
 }

@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 340 96" width="340" height="96" role="img" aria-labelledby="sigesoTitle sigesoDesc">
+  <title id="sigesoTitle">Sigeso — Sistem Generator Soal</title>
+  <desc id="sigesoDesc">Minimalist S mark with answer dot and Sigeso wordmark</desc>
+  <rect x="8" y="16" width="64" height="64" rx="18" fill="#1D4ED8"/>
+  <path d="M54 36.5C54 31.4 49.3 28 41.5 28C33.7 28 28.5 31.6 28.5 37C28.5 49 56.5 43.2 56.5 57.5C56.5 63.4 51 67 42.5 67C34.8 67 29 63.9 28 58.5" fill="none" stroke="#FFFFFF" stroke-width="7.5" stroke-linecap="round"/>
+  <circle cx="56.5" cy="30" r="6" fill="#FBBF24" stroke="#1D4ED8" stroke-width="2.5"/>
+  <text x="88" y="54" font-family="Inter, 'Segoe UI', Arial, sans-serif" font-size="32" font-weight="800" letter-spacing="1.5" fill="#0F172A">SIGESO</text>
+  <text x="89" y="72" font-family="Inter, 'Segoe UI', Arial, sans-serif" font-size="10.5" font-weight="600" letter-spacing="2.4" fill="#64748B">SISTEM GENERATOR SOAL</text>
+</svg>

@@ -15,26 +15,24 @@ button, a, input, select, textarea { font-size: 15px; }
 :focus-visible { outline: 3px solid var(--aksen); outline-offset: 2px; }
 .layout { display: flex; min-height: 100vh; }
 .side { width: 228px; background: var(--sisi); color: #e6f2ef; padding: 20px 14px; display: flex; flex-direction: column; gap: 4px; }
+.side a.merek { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.side a.merek img { flex: none; }
+.side a.merek span { display: flex; flex-direction: column; line-height: 1.2; }
+.side a.merek strong { color: #ffffff; font-size: 19px; letter-spacing: 0.5px; }
+.side a.merek small { color: #8fb3ad; font-size: 11px; }
 .side h2 { font-size: 20px; margin: 0 0 14px; color: #ffffff; padding-left: 12px; }
 .side a { color: #bcd6d1; text-decoration: none; padding: 10px 12px; border-radius: 10px; display: block; }
 .side a:hover { background: #134e4a; color: #fff; }
 .side a.aktif { background: var(--primer); color: #fff; font-weight: 600; }
-.konten { flex: 1; padding: 24px; max-width: 980px; }
 .kartu { background: var(--kartu); border: 1px solid var(--garis); border-radius: 14px; padding: 18px; margin-bottom: 16px; box-shadow: 0 1px 4px rgb(11 46 43 / 0.08); }
-input, select, textarea { width: 100%; padding: 10px; margin: 4px 0 8px; border: 1px solid #9db8b3; border-radius: 10px; font-size: 15px; background: #fbfefd; color: var(--teks); }
-button { background: var(--primer); color: #fff; border: 0; border-radius: 10px; padding: 10px 16px; font-size: 15px; min-height: 44px; cursor: pointer; }
-button:hover { background: var(--primer-gelap); }
-button:disabled { opacity: 0.6; }
-table { width: 100%; border-collapse: collapse; }
-th { background: #e0efec; color: var(--sisi); }
-th, td { text-align: left; padding: 9px; border-bottom: 1px solid var(--garis); }
-tbody tr:nth-child(even) { background: #f4faf8; }
+/* Elemen form/tombol/tabel milik Mantine (jangan style global di sini) */
 .pesan { padding: 10px; border-radius: 10px; margin: 8px 0; }
 .gagal { background: #fef2f2; color: #7f1d1d; }
 .ok { background: #ecfdf5; color: #14532d; }
 .baris { display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-end; }
 .baris > * { flex: 1; min-width: 140px; }
 .lbl { font-weight: 600; margin: 10px 0 2px; font-size: 14px; color: var(--sisi); }
+.baris-dempet { display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-end; margin-top: 8px; }
 .lencana { display: inline-block; padding: 3px 12px; border-radius: 999px; font-size: 13px; font-weight: 600; }
 .l-hijau { background: #dcfce7; color: #14532d; }
 .l-amber { background: #fef3c7; color: #92400e; }
@@ -58,5 +56,18 @@ tbody tr:nth-child(even) { background: #f4faf8; }
   .side { width: auto; flex-direction: row; flex-wrap: wrap; align-items: center; }
   .side h2 { margin: 0 8px 0 0; }
   .side a { padding: 8px 10px; }
-  .konten { padding: 14px; }
+}
+/* Bar pemilih subbab menempel di bawah header; di layar sempit ia melipat jadi tinggi. */
+.pemilih { position: sticky; top: calc(var(--app-shell-header-height, 56px) + 8px); z-index: 20; }
+@media (max-width: 1199px) {
+  .pemilih { position: static; }
+}
+.kata-masuk { animation: kataMasuk 0.7s ease both; }
+@keyframes kataMasuk { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: none; } }
+/* Dashboard: nomor langkah alur. Warnanya menandai keadaan nyata langkah itu. */
+.lingkar { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 999px; font-size: 12px; font-weight: 700; background: #e2e8f0; color: #475569; }
+.lingkar[data-ada='1'] { background: var(--primer); color: #fff; }
+.lingkar[data-fokus='1'] { background: var(--aksen); color: #fff; }
+@media (prefers-reduced-motion: reduce) {
+  .kata-masuk { animation: none; }
 }

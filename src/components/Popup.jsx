@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useState } from 'react';
+import { Button } from '@mantine/core';
 
 const Ctx = createContext(() => {});
 export const useToast = () => useContext(Ctx);
@@ -22,13 +23,13 @@ export default function PopupProvider({ children }) {
     <Ctx.Provider value={dorong}>
       {children}
       {aktif && (
-        <div onClick={tutup} style={{ position: 'fixed', inset: 0, background: 'rgb(0 0 0 / .5)', zIndex: 99, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
-          <div onClick={(e) => e.stopPropagation()} className="kartu" style={{ margin: 0, maxWidth: 420, width: '100%', borderTop: `6px solid ${ok ? '#0f766e' : '#991b1b'}` }}>
+        <div onClick={tutup} style={{ position: 'fixed', inset: 0, background: 'rgb(0 0 0 / .5)', zIndex: 400, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+          <div onClick={(e) => e.stopPropagation()} className="kartu" style={{ margin: 0, maxWidth: 420, width: '100%', borderTop: `6px solid ${ok ? 'var(--mantine-color-teal-6)' : 'var(--mantine-color-red-6)'}` }}>
             <h2 style={{ marginTop: 0 }}>{ok ? '✓ Berhasil' : '✕ Gagal'}</h2>
             <p className="popup-teks">{aktif.teks}</p>
             {aktif.meta && <p style={{ color: '#94a3b8', fontSize: 12 }}>{aktif.meta}</p>}
             {antre.length > 1 && <p style={{ color: '#64748b' }}>+{antre.length - 1} pesan lain menunggu</p>}
-            <button onClick={tutup} style={{ width: '100%', background: ok ? '#0f766e' : '#991b1b' }}>OK</button>
+            <Button fullWidth color={ok ? 'teal' : 'red'} onClick={tutup}>OK</Button>
           </div>
         </div>
       )}

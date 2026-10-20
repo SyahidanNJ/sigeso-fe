@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80" width="80" height="80" role="img" aria-label="Logo Sigeso">
+  <rect x="8" y="8" width="64" height="64" rx="18" fill="#1D4ED8"/>
+  <path d="M54 28.5C54 23.4 49.3 20 41.5 20C33.7 20 28.5 23.6 28.5 29C28.5 41 56.5 35.2 56.5 49.5C56.5 55.4 51 59 42.5 59C34.8 59 29 55.9 28 50.5" fill="none" stroke="#FFFFFF" stroke-width="7.5" stroke-linecap="round"/>
+  <circle cx="56.5" cy="22" r="6" fill="#FBBF24" stroke="#1D4ED8" stroke-width="2.5"/>
+</svg>

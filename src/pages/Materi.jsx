@@ -1,127 +1,118 @@
 import { useEffect, useState } from 'react';
-import api from '../lib/api';
-import Panduan from '../components/Panduan';
+import { Alert, Button, FileInput, Group, Paper, Table, Text, TextInput, Title } from '@mantine/core';
+import api, { unduhBerkas } from '../lib/api';
 import Kosong from '../components/Kosong';
+import Modal from '../components/Modal';
 
-export default function Materi() {
-  const [mapel, setMapel] = useState([]);
-  const [topik, setTopik] = useState([]);
-  const [bab, setBab] = useState([]);
-  const [sub, setSub] = useState([]);
-  const [nama, setNama] = useState('');
-  const [msg, setMsg] = useState('');
-  const [pilih, setPilih] = useState({});
+const STATUS = { done: 'Siap dipakai', pending: 'Sedang dibaca', failed: 'Gagal dibaca' };
+
+// Sumber materi untuk subbab yang dipilih di bar atas (PemilihSubbab).
+export default function Materi({ subBab }) {
   const [sumber, setSumber] = useState([]);
   const [url, setUrl] = useState('');
   const [file, setFile] = useState(null);
+  const [msg, setMsg] = useState('');
   const [loading, setLoading] = useState(false);
+  const [hapus, setHapus] = useState(null);
 
-  async function muat() {
+  async function muatSumber() {
+    if (!subBab) { setSumber([]); return; }
     try {
-      const r = await api.get('/subjects');
-      setMapel(r.data.data);
-    } catch (e) { setMsg(e.userMessage || e.message); }
-  }
-  useEffect(() => { muat(); }, []);
-
-  async function muatSumber(subId) {
-    try {
-      const r = await api.get(`/sources?sub_chapter_id=${subId}`);
+      const r = await api.get('/sources', { params: { sub_chapter_id: subBab.id } });
       setSumber(r.data.data);
-    } catch (e) { setMsg(e.userMessage || e.message); }
+    } catch { /* pesan sudah muncul dari api.js */ }
   }
-
-  async function tambahMapel() {
-    setLoading(true);
-    try {
-      await api.post('/subjects', { name: nama });
-      setNama('');
-      muat();
-    } catch (e) { setMsg(e.userMessage || e.message); } finally { setLoading(false); }
-  }
+  useEffect(() => { muatSumber(); }, [subBab?.id]);
 
   async function unggah() {
-    if (!file || !pilih.sub_chapter_id) { setMsg('Pilih subbab dan file dulu.'); return; }
+    if (!file) { setMsg('Pilih berkasnya dulu.'); return; }
+    setMsg('');
     setLoading(true);
     try {
       const fd = new FormData();
       fd.append('file', file);
-      fd.append('sub_chapter_id', pilih.sub_chapter_id);
-      const r = await api.post('/sources/upload', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
-      setMsg(`Diunggah: ${r.data.data.chars} karakter.`);
-      muatSumber(pilih.sub_chapter_id);
-    } catch (e) { setMsg(e.userMessage || e.message); } finally { setLoading(false); }
+      fd.append('sub_chapter_id', subBab.id);
+      await api.post('/sources/upload', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
+      muatSumber();
+    } catch { /* pesan sudah muncul dari api.js */ } finally { setLoading(false); }
   }
 
   async function tambahUrl() {
-    if (!url || !pilih.sub_chapter_id) { setMsg('Pilih subbab dan isi URL dulu.'); return; }
+    if (!url) { setMsg('Isi URL dulu.'); return; }
+    setMsg('');
     setLoading(true);
     try {
-      const r = await api.post('/sources/url', { url, sub_chapter_id: Number(pilih.sub_chapter_id) });
-      setMsg(`Tersimpan: ${r.data.data.chars} karakter dari ${url}.`);
+      await api.post('/sources/url', { url, sub_chapter_id: Number(subBab.id) });
       setUrl('');
-      muatSumber(pilih.sub_chapter_id);
-    } catch (e) { setMsg(e.userMessage || e.message); } finally { setLoading(false); }
+      muatSumber();
+    } catch { /* pesan sudah muncul dari api.js */ } finally { setLoading(false); }
   }
 
-  const cariNama = (arr, id) => (arr.find((x) => String(x.id) === String(id)) || {}).name;
-  const jejak = [cariNama(mapel, pilih.subject_id), cariNama(topik, pilih.topic_id), cariNama(bab, pilih.chapter_id)].filter(Boolean).join('  ›  ');
+  // Tautan dibuka langsung; berkas lewat rute ber-token supaya tidak 401.
+  async function buka(s) {
+    if (s.original_url) { window.open(s.original_url, '_blank', 'noopener'); return; }
+    try { await unduhBerkas(`/sources/${s.id}/file`, s.nama); } catch { /* pesan sudah muncul dari api.js */ }
+  }
+
+  async function jalankanHapus() {
+    setLoading(true);
+    try {
+      await api.delete(`/sources/${hapus.id}`);
+      setHapus(null);
+      muatSumber();
+    } catch { /* pesan sudah muncul dari api.js */ } finally { setLoading(false); }
+  }
+
+  if (!subBab) {
+    return (
+      <Paper withBorder shadow="xs" p="md" mb="md">
+        <Title order={3} mb="xs">Sumber materi</Title>
+        <Kosong teks="Pilih Subbab di bar atas — tempat unggah materi muncul di sini." />
+      </Paper>
+    );
+  }
 
   return (
-    <div>
-      <div className="kepala"><h2>Materi</h2><span className="sub">Mapel › Topik › Bab › Subbab</span></div>
-      <Panduan id="materi" steps={['Pilih Mapel, lalu Topik, lalu Bab.', 'Kalau Subbab belum ada, ketik namanya lalu tekan + Subbab.', 'Klik nama Subbab, lalu Unggah file materi atau tempel link.']} />
-      <div className="kartu">
-        <h2>Materi: Mapel &gt; Topik &gt; Bab &gt; Subbab</h2>
-        {jejak && <p className="sub">Posisi: {jejak}</p>}
-        {msg && <p className="pesan gagal">{msg}</p>}
-        <div className="lbl">Nama baru (untuk mapel, topik, bab, atau subbab)</div>
-        <div className="baris">
-          <input placeholder="Nama baru (mapel/topik/bab/subbab)" value={nama} onChange={(e) => setNama(e.target.value)} />
-          <button onClick={tambahMapel} disabled={loading}>+ Mapel</button>
-        </div>
-        <div className="baris" style={{ marginTop: 8 }}>
-          <div><div className="lbl">Mapel</div><select onChange={async (e) => { setPilih({ ...pilih, subject_id: e.target.value }); const r = await api.get(`/topics?subject_id=${e.target.value}`); setTopik(r.data.data); }}>
-            <option value="">— Mapel —</option>
-            {mapel.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
-          </select></div>
-          <div><div className="lbl">Topik</div><select onChange={async (e) => { setPilih({ ...pilih, topic_id: e.target.value }); const r = await api.get(`/chapters?topic_id=${e.target.value}`); setBab(r.data.data); }}>
-            <option value="">— Topik —</option>
-            {topik.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
-          </select></div>
-          <div><div className="lbl">Bab</div><select onChange={async (e) => { setPilih({ ...pilih, chapter_id: e.target.value }); const r = await api.get(`/subchapters?chapter_id=${e.target.value}`); setSub(r.data.data); }}>
-            <option value="">— Bab —</option>
-            {bab.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
-          </select></div>
-        </div>
-        <div className="baris" style={{ marginTop: 8 }}>
-          <button onClick={async () => { await api.post('/topics', { subject_id: Number(pilih.subject_id), grade_level: 7, name: nama }); setMsg('Topik ditambah.'); }} disabled={loading}>+ Topik</button>
-          <button onClick={async () => { await api.post('/chapters', { topic_id: Number(pilih.topic_id), name: nama }); setMsg('Bab ditambah.'); }} disabled={loading}>+ Bab</button>
-          <button onClick={async () => { const r = await api.post('/subchapters', { chapter_id: Number(pilih.chapter_id), name: nama }); setMsg('Subbab ditambah.'); setSub([...sub, r.data.data]); }} disabled={loading}>+ Subbab</button>
-        </div>
-        {sub.length === 0 ? (pilih.chapter_id ? <Kosong teks="Belum ada subbab di bab ini. Ketik namanya di atas lalu tekan + Subbab." /> : null) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 8 }}>
-          {sub.map((s) => <button key={s.id} className={pilih.sub_chapter_id === s.id ? '' : 'btn2'} style={{ textAlign: 'left' }} onClick={() => { setPilih({ ...pilih, sub_chapter_id: s.id }); muatSumber(s.id); }}>{s.name}</button>)}
-        </div>
-        )}
-      </div>
-      {pilih.sub_chapter_id && (
-        <div className="kartu">
-          <h2>Sumber materi (PDF/DOCX/TXT atau URL)</h2>
-          <table>
-            <thead><tr><th>Jenis</th><th>Sumber</th><th>Status</th></tr></thead>
-            <tbody>{sumber.map((s) => <tr key={s.id}><td>{s.kind}</td><td>{s.original_url || s.file_path || '-'}</td><td>{s.status}</td></tr>)}</tbody>
-          </table>
-          <div className="baris" style={{ marginTop: 8 }}>
-            <div><div className="lbl">Berkas materi (PDF, DOCX, atau TXT)</div><input type="file" accept=".pdf,.docx,.txt" onChange={(e) => setFile(e.target.files[0])} /></div>
-            <div><div className="lbl">&nbsp;</div><button onClick={unggah} disabled={loading}>{loading ? 'Mengunggah...' : 'Unggah'}</button></div>
-          </div>
-          <div className="baris">
-            <div><div className="lbl">Link materi (diawali https://)</div><input placeholder="cth: https://belajar.id/materi/..." value={url} onChange={(e) => setUrl(e.target.value)} /></div>
-            <div><div className="lbl">&nbsp;</div><button onClick={tambahUrl} disabled={loading}>{loading ? 'Menyimpan...' : '+ URL'}</button></div>
-          </div>
-        </div>
+    <Paper withBorder shadow="xs" p="md" mb="md">
+      <Title order={3} mb="xs">Sumber materi — {subBab.nama}</Title>
+      {msg && <Alert color="orange" mb="sm">{msg}</Alert>}
+      {sumber.length === 0 ? <Kosong teks="Belum ada materi di subbab ini. Unggah berkas atau tempel link di bawah." /> : (
+        <Table striped highlightOnHover mb="sm">
+          <Table.Thead><Table.Tr><Table.Th w={90}>Jenis</Table.Th><Table.Th>Sumber</Table.Th><Table.Th w={160}>Status</Table.Th><Table.Th w={160}>Aksi</Table.Th></Table.Tr></Table.Thead>
+          <Table.Tbody>{sumber.map((s) => (
+            <Table.Tr key={s.id}>
+              <Table.Td>{s.kind === 'url' ? 'Link' : 'Berkas'}</Table.Td>
+              <Table.Td>{s.original_url || s.nama || '-'}</Table.Td>
+              <Table.Td>
+                <Text size="sm">{STATUS[s.status] || s.status}</Text>
+                {s.status === 'failed' && s.error && <Text size="xs" c="red">{s.error}</Text>}
+              </Table.Td>
+              <Table.Td>
+                <Group gap={6} wrap="nowrap">
+                  <Button size="compact-xs" variant="outline" onClick={() => buka(s)}>{s.kind === 'url' ? 'Buka' : 'Unduh'}</Button>
+                  <Button size="compact-xs" variant="outline" color="red" onClick={() => setHapus(s)}>Hapus</Button>
+                </Group>
+              </Table.Td>
+            </Table.Tr>
+          ))}</Table.Tbody>
+        </Table>
       )}
-    </div>
+      <Group align="flex-end">
+        <FileInput label="Berkas materi (PDF, DOCX, atau TXT)" accept=".pdf,.docx,.txt" value={file} onChange={setFile} style={{ flex: 1 }} />
+        <Button onClick={unggah} loading={loading}>Unggah</Button>
+      </Group>
+      <Group align="flex-end" mt="sm">
+        <TextInput label="Link materi (diawali https://)" placeholder="cth: https://belajar.id/materi/..." value={url} onChange={(e) => setUrl(e.target.value)} style={{ flex: 1 }} />
+        <Button onClick={tambahUrl} loading={loading}>+ URL</Button>
+      </Group>
+      {hapus && (
+        <Modal judul="Hapus materi?" tutup={() => setHapus(null)}>
+          <p>Yakin hapus <b>{hapus.nama || hapus.original_url}</b>?</p>
+          <p style={{ color: '#64748b' }}>Berkasnya ikut dibuang dari server. Kalau materi ini sudah dipakai membuat soal, penghapusan akan ditolak.</p>
+          <Button color="red" fullWidth loading={loading} onClick={jalankanHapus} mb="sm">Ya, hapus</Button>
+          <Button variant="outline" fullWidth onClick={() => setHapus(null)}>Batal</Button>
+        </Modal>
+      )}
+    </Paper>
   );
 }

@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import ErrorBoundary from './components/ErrorBoundary';
 import ToastProvider, { useToast } from './components/Popup';
 import { pesanBus } from './lib/api';
@@ -8,11 +8,10 @@ import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import Sekolah from './pages/Sekolah';
 import Kelas from './pages/Kelas';
-import Materi from './pages/Materi';
-import BankSoal from './pages/BankSoal';
-import Ujian from './pages/Ujian';
+import Soal from './pages/Soal';
 import Cetak from './pages/Cetak';
 import Nilai from './pages/Nilai';
+import Profil from './pages/Profil';
 
 function Daftarkan() {
   pesanBus.dorong = useToast();
@@ -32,11 +31,14 @@ export default function App() {
             <Route path="/" element={<Dashboard />} />
             <Route path="/sekolah" element={<Sekolah />} />
             <Route path="/kelas" element={<Kelas />} />
-            <Route path="/materi" element={<Materi />} />
-            <Route path="/bank" element={<BankSoal />} />
-            <Route path="/ujian" element={<Ujian />} />
+            <Route path="/soal" element={<Soal />} />
+            <Route path="/materi" element={<Navigate to="/soal" replace />} />
+            <Route path="/bank" element={<Navigate to="/soal?tab=soal" replace />} />
+            <Route path="/ujian" element={<Navigate to="/soal?tab=ujian" replace />} />
             <Route path="/cetak" element={<Cetak />} />
             <Route path="/nilai" element={<Nilai />} />
+            <Route path="/profil" element={<Profil />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
           </Route>
         </Routes>
       </BrowserRouter>
