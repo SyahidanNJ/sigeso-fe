@@ -7,13 +7,27 @@ import Modal from '../components/Modal';
 
 export default function Cetak() {
   const [ujian, setUjian] = useState([]);
+  const [kelas, setKelas] = useState('');
+  const [daftarKelas, setDaftarKelas] = useState([]);
+  const [mapelList, setMapelList] = useState([]);
   const [aktif, setAktif] = useState('');
   const [lembar, setLembar] = useState([]);
   const [loading, setLoading] = useState(false);
   const [modal, setModal] = useState(null);
 
   useEffect(() => {
-    api.get('/exams').then((r) => { setUjian(r.data.data); if (r.data.data[0]) setAktif(String(r.data.data[0].id)); })
+    Promise.all([api.get('/exams'), api.get('/classes'), api.get('/subjects')])
+      .then(([e, k, m]) => {
+        const daftarUjian = e.data.data;
+        setUjian(daftarUjian);
+        setDaftarKelas(k.data.data);
+        setMapelList(m.data.data);
+        // Mulai dari kelas ujian terbaru supaya tampilan awal tak berubah.
+        const kelasAwal = String(daftarUjian[0]?.class_id ?? k.data.data[0]?.id ?? '');
+        setKelas(kelasAwal);
+        const ujianAwal = daftarUjian.find((u) => String(u.class_id) === kelasAwal);
+        setAktif(ujianAwal ? String(ujianAwal.id) : '');
+      })
       .catch(() => { /* pesan sudah muncul dari api.js */ });
   }, []);
   async function muatLembar(id) {
@@ -22,7 +36,16 @@ export default function Cetak() {
       setLembar(r.data.data);
     } catch { /* pesan sudah muncul dari api.js */ }
   }
-  useEffect(() => { if (aktif) muatLembar(aktif); }, [aktif]);
+  useEffect(() => { if (aktif) muatLembar(aktif); else setLembar([]); }, [aktif]);
+
+  function gantiKelas(v) {
+    setKelas(v || '');
+    const pertama = ujian.find((u) => String(u.class_id) === v);
+    setAktif(pertama ? String(pertama.id) : '');
+    setLembar([]);
+  }
+  const pilihanUjian = ujian.filter((u) => String(u.class_id) === kelas);
+  const namaMapel = (id) => mapelList.find((m) => m.id === id)?.name || 'Tanpa mapel';
 
   async function cetak() {
     setLoading(true);
@@ -51,11 +74,12 @@ export default function Cetak() {
   return (
     <div>
       <Title order={2} mb="sm">Cetak</Title>
-      <Panduan id="cetak" steps={['Pilih ujian.', 'Tekan Cetak semua siswa, berkas otomatis terunduh untuk difotokopi.', 'Kalau ada kertas rusak, tekan Cetak ulang pada nama anak itu.']} />
+      <Panduan id="cetak" steps={['Pilih kelas, lalu pilih ujian.', 'Tekan Cetak semua siswa, berkas otomatis terunduh untuk difotokopi.', 'Kalau ada kertas rusak, tekan Cetak ulang pada nama anak itu.']} />
       <Paper withBorder shadow="xs" p="md" mb="md">
         <Title order={3} mb="xs">Cetak lembar (satu-lembar ber-QR per siswa)</Title>
         <Group grow align="flex-end">
-          <Select label="Pilih ujian" data={ujian.map((u) => ({ value: String(u.id), label: `${u.title} (${u.n_soal} soal)` }))} value={aktif} onChange={setAktif} />
+          <Select label="Pilih kelas" data={daftarKelas.map((k) => ({ value: String(k.id), label: `${k.name} (${k.academic_year})` }))} value={kelas} onChange={gantiKelas} allowDeselect={false} placeholder={daftarKelas.length ? '— pilih kelas —' : 'belum ada kelas'} />
+          <Select label="Pilih ujian" data={pilihanUjian.map((u) => ({ value: String(u.id), label: `${namaMapel(u.subject_id)} · ${u.title} (${u.n_soal} soal)` }))} value={aktif} onChange={setAktif} placeholder={pilihanUjian.length ? '— pilih ujian —' : 'belum ada ujian untuk kelas ini'} />
         </Group>
         <Group mt="sm">
           <Button onClick={cetak} loading={loading} disabled={!aktif}>Cetak semua siswa</Button>

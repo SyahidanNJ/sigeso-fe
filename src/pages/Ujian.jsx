@@ -7,6 +7,19 @@ import Modal from '../components/Modal';
 
 const BATAS = 200; // samakan dengan LIMIT di listQuestions
 const MAKS = 100;  // batas question_ids di setExamItems
+// Jenis ujian tercetak sebagai judul lembar, menggantikan judul bab.
+const JENIS_UJIAN = [
+  'Ulangan Harian',
+  'Penilaian Tengah Semester (PTS)',
+  'Penilaian Akhir Semester (PAS)',
+  'Penilaian Akhir Tahun (PAT)',
+  'Asesmen Sumatif Tengah Semester (ASTS)',
+  'Asesmen Sumatif Akhir Semester (ASAS)',
+  'Asesmen Sumatif Akhir Tahun (ASAT)',
+  'Ujian Sekolah (US)',
+  'Penilaian Ujian Satuan Pendidikan (USP)',
+  'Try Out',
+];
 const KUNCI_SUBBAB = 'sigeso_subbab'; // sama dengan Soal.jsx
 
 // Subbab yang sedang digarap di halaman Materi & Soal, dipakai sebagai saringan awal di sini.
@@ -22,7 +35,7 @@ export default function Ujian() {
   const [mapelList, setMapelList] = useState([]);
   const [aktif, setAktif] = useState(null);
   const [dipilih, setDipilih] = useState([]);
-  const [form, setForm] = useState({ title: '', class_id: '', subject_id: '' });
+  const [form, setForm] = useState({ title: '', exam_type: 'Ulangan Harian', class_id: '', subject_id: '' });
   const [tipe, setTipe] = useState('SEMUA');
   const [materi, setMateri] = useState('semua');
   const [cari, setCari] = useState('');
@@ -30,6 +43,8 @@ export default function Ujian() {
   const [loading, setLoading] = useState(false);
   const [ubahUjian, setUbahUjian] = useState(null);
   const [hapusUjian, setHapusUjian] = useState(null);
+  const [bukaBuat, setBukaBuat] = useState(false);
+  const [msgBuat, setMsgBuat] = useState('');
 
   async function muatBank(beforeId) {
     try {
@@ -75,18 +90,27 @@ export default function Ujian() {
 
   async function buat(e) {
     e.preventDefault();
-    if (!form.subject_id) { setMsg('Pilih mapelnya dulu.'); return; }
-    if (!form.class_id) { setMsg('Pilih kelas dulu. Kalau belum ada, buat di halaman Kelas & Siswa.'); return; }
-    setMsg('');
+    if (!form.subject_id) { setMsgBuat('Pilih mapelnya dulu.'); return; }
+    if (!form.class_id) { setMsgBuat('Pilih kelas dulu. Kalau belum ada, buat di halaman Kelas & Siswa.'); return; }
+    setMsgBuat('');
     setLoading(true);
     try {
       const r = await api.post('/exams', { ...form, class_id: Number(form.class_id), subject_id: Number(form.subject_id) });
+      setBukaBuat(false);
+      setForm((f) => ({ ...f, title: '' }));
       await muat();
       pilihUjian(r.data.data); // langsung buka daftar soal supaya bisa ditempeli
     } catch { /* pesan sudah muncul dari api.js */ } finally { setLoading(false); }
   }
 
+  function bukaTambah() {
+    setMsgBuat('');
+    setForm((f) => ({ ...f, title: '', exam_type: f.exam_type || 'Ulangan Harian', class_id: f.class_id || (kelas[0] ? String(kelas[0].id) : '') }));
+    setBukaBuat(true);
+  }
+
   const namaMapel = mapelList.find((m) => String(m.id) === form.subject_id)?.name || '';
+  const namaKelas = (id) => kelas.find((k) => k.id === id)?.name || '-';
   const daftarUjian = ujian.filter((u) => String(u.subject_id) === form.subject_id);
 
   function centang(id) {
@@ -107,7 +131,7 @@ export default function Ujian() {
     e.preventDefault();
     setLoading(true);
     try {
-      await api.put(`/exams/${ubahUjian.id}`, { title: ubahUjian.title });
+      await api.put(`/exams/${ubahUjian.id}`, { title: ubahUjian.title, exam_type: ubahUjian.exam_type });
       setUbahUjian(null);
       await muat();
     } catch { /* pesan sudah muncul dari api.js */ } finally { setLoading(false); }
@@ -184,7 +208,7 @@ export default function Ujian() {
 
   return (
     <div>
-      <Panduan id="ujian" steps={['Pilih mapelnya dulu, nanti daftar ujian mapel itu muncul.', 'Isi judul + kelas lalu tekan + Ujian, atau klik Pilih pada ujian yang sudah ada.', 'Daftar soal langsung mengikuti subbab pilihanmu di bar atas halaman Materi & Soal — ubah lewat "Saring materi" bila perlu, centang soalnya, tekan Simpan pilihan.']} />
+      <Panduan id="ujian" steps={['Pilih mapelnya dulu, nanti daftar ujian mapel itu muncul.', 'Klik + Tambah ujian, isi judul + kelas, lalu simpan — atau klik Pilih pada ujian yang sudah ada.', 'Daftar soal langsung mengikuti subbab pilihanmu di bar atas halaman Materi & Soal — ubah lewat "Saring materi" bila perlu, centang soalnya, tekan Simpan pilihan.']} />
       <Paper withBorder shadow="xs" p="md" mb="md">
         <Title order={3} mb="xs">Pilih mapel</Title>
         {msg && <Alert color="orange" mb="sm">{msg}</Alert>}
@@ -192,20 +216,16 @@ export default function Ujian() {
         {!form.subject_id && <Text size="sm" c="dimmed" mt="sm">Pilih mapelnya dulu, nanti daftar ujian mapel itu muncul di bawah.</Text>}
         {form.subject_id && (
           <>
-            <Title order={4} mt="lg" mb="xs">Daftar ujian {namaMapel} ({daftarUjian.length})</Title>
-            {daftarUjian.length === 0 ? <Kosong teks="Belum ada ujian untuk mapel ini. Buat lewat form di bawah." /> : (
+            <Group justify="space-between" align="center" mt="lg" mb="xs">
+              <Title order={4}>Daftar ujian {namaMapel} ({daftarUjian.length})</Title>
+              <Button size="xs" onClick={bukaTambah}>+ Tambah ujian</Button>
+            </Group>
+            {daftarUjian.length === 0 ? <Kosong teks="Belum ada ujian untuk mapel ini. Klik + Tambah ujian." /> : (
             <Table striped highlightOnHover mb="sm">
-              <Table.Thead><Table.Tr><Table.Th>Judul</Table.Th><Table.Th>N soal</Table.Th><Table.Th></Table.Th></Table.Tr></Table.Thead>
-              <Table.Tbody>{daftarUjian.map((u) => <Table.Tr key={u.id} style={aktif?.id === u.id ? { background: 'var(--mantine-color-teal-0)' } : null}><Table.Td>{u.title}</Table.Td><Table.Td>{u.n_soal}</Table.Td><Table.Td><Group gap={6} wrap="nowrap"><Button size="xs" onClick={() => pilihUjian(u)}>Pilih</Button><Button size="xs" variant="outline" onClick={() => setUbahUjian({ id: u.id, title: u.title })}>Ubah</Button><Button size="xs" variant="outline" color="red" onClick={() => bukaHapus(u)}>Hapus</Button></Group></Table.Td></Table.Tr>)}</Table.Tbody>
+              <Table.Thead><Table.Tr><Table.Th>Judul</Table.Th><Table.Th>Jenis</Table.Th><Table.Th>Kelas</Table.Th><Table.Th>N soal</Table.Th><Table.Th></Table.Th></Table.Tr></Table.Thead>
+              <Table.Tbody>{daftarUjian.map((u) => <Table.Tr key={u.id} style={aktif?.id === u.id ? { background: 'var(--mantine-color-teal-0)' } : null}><Table.Td>{u.title}</Table.Td><Table.Td>{u.exam_type || '-'}</Table.Td><Table.Td>{namaKelas(u.class_id)}</Table.Td><Table.Td>{u.n_soal}</Table.Td><Table.Td><Group gap={6} wrap="nowrap"><Button size="xs" onClick={() => pilihUjian(u)}>Pilih</Button><Button size="xs" variant="outline" onClick={() => setUbahUjian({ id: u.id, title: u.title, exam_type: u.exam_type || 'Ulangan Harian' })}>Ubah</Button><Button size="xs" variant="outline" color="red" onClick={() => bukaHapus(u)}>Hapus</Button></Group></Table.Td></Table.Tr>)}</Table.Tbody>
             </Table>
             )}
-            <form onSubmit={buat}>
-              <Group grow align="flex-end">
-                <TextInput label="Judul ujian" placeholder="cth: Ulangan Bab 1" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
-                <Select label="Kelas" placeholder={kelas.length ? '— pilih kelas —' : 'belum ada kelas'} data={kelas.map((k) => ({ value: String(k.id), label: `${k.name} (${k.academic_year})` }))} value={form.class_id} onChange={(v) => setForm({ ...form, class_id: v || '' })} allowDeselect={false} />
-              </Group>
-              <Button type="submit" loading={loading} mt="sm">+ Ujian</Button>
-            </form>
           </>
         )}
       </Paper>
@@ -250,10 +270,23 @@ export default function Ujian() {
           </Group>
         </Paper>
       )}
+      {bukaBuat && (
+        <Modal judul="Tambah ujian" tutup={() => setBukaBuat(false)}>
+          <form onSubmit={buat}>
+            {msgBuat && <Alert color="orange" mb="sm">{msgBuat}</Alert>}
+            <TextInput label="Judul ujian" placeholder="cth: Ulangan Bab 1" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} mb="sm" data-autofocus />
+            <Select label="Jenis ujian" data={JENIS_UJIAN} value={form.exam_type} onChange={(v) => setForm({ ...form, exam_type: v || 'Ulangan Harian' })} allowDeselect={false} mb="sm" />
+            <Select label="Kelas" placeholder={kelas.length ? '— pilih kelas —' : 'belum ada kelas'} data={kelas.map((k) => ({ value: String(k.id), label: `${k.name} (${k.academic_year})` }))} value={form.class_id} onChange={(v) => setForm({ ...form, class_id: v || '' })} allowDeselect={false} mb="md" />
+            <Button type="submit" fullWidth loading={loading} disabled={!form.title.trim()} mb="sm">+ Ujian</Button>
+            <Button variant="outline" fullWidth onClick={() => setBukaBuat(false)}>Batal</Button>
+          </form>
+        </Modal>
+      )}
       {ubahUjian && (
-        <Modal judul="Ubah judul ujian" tutup={() => setUbahUjian(null)}>
+        <Modal judul="Ubah ujian" tutup={() => setUbahUjian(null)}>
           <form onSubmit={simpanJudul}>
-            <TextInput label="Judul ujian" value={ubahUjian.title} onChange={(e) => setUbahUjian({ ...ubahUjian, title: e.target.value })} mb="md" autoFocus />
+            <TextInput label="Judul ujian" value={ubahUjian.title} onChange={(e) => setUbahUjian({ ...ubahUjian, title: e.target.value })} mb="sm" autoFocus />
+            <Select label="Jenis ujian" data={JENIS_UJIAN} value={ubahUjian.exam_type} onChange={(v) => setUbahUjian({ ...ubahUjian, exam_type: v || 'Ulangan Harian' })} allowDeselect={false} mb="md" />
             <Button type="submit" fullWidth loading={loading} disabled={!ubahUjian.title.trim()}>Simpan</Button>
           </form>
         </Modal>

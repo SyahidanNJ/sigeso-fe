@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Avatar, Badge, Button, Group, Paper, Select, Text, Textarea, TextInput, Title } from '@mantine/core';
+import { Avatar, Badge, Button, FileInput, Group, Image, Paper, Select, Text, Textarea, TextInput, Title } from '@mantine/core';
 import api from '../lib/api';
 import Panduan from '../components/Panduan';
 import Kosong from '../components/Kosong';
@@ -7,6 +7,9 @@ import Kosong from '../components/Kosong';
 const AWAL = { name: '', npsn: '', address: '' };
 const KUNCI_DRAFT = 'sigeso_sekolah_draft';
 const MANUAL = 'Isi datanya manual saja.';
+// Logo disajikan backend tanpa token, jadi cukup dipakai sebagai <img src>.
+const URL_LOGO = `${String(import.meta.env.VITE_API_URL || '').replace(/\/$/, '')}/logos/`;
+const logoUrl = (p) => (p ? URL_LOGO + p.replace(/^logo\//, '') : null);
 
 const PANDUAN = [
   'Ketik nama sekolah atau NPSN di kotak pencarian, lalu pilih sekolah Anda dari daftar.',
@@ -32,6 +35,7 @@ function pesanGagal(e) {
 
 export default function Sekolah() {
   const [data, setData] = useState(null);
+  const [kop, setKop] = useState(null);
   const [muat, setMuat] = useState(true);
   const [form, setForm] = useState(null); // null = sedang tidak mengubah
   const [kata, setKata] = useState('');
@@ -40,11 +44,17 @@ export default function Sekolah() {
   const [peringatan, setPeringatan] = useState(false);
   const [tunggu, setTunggu] = useState(null);
   const [simpanLoading, setSimpanLoading] = useState(false);
+  const [unggahSlot, setUnggahSlot] = useState(null); // 'kiri' | 'kanan'
+  const [catatanLogo, setCatatanLogo] = useState('');
 
   async function muatSekolah() {
     try {
-      const r = await api.get('/institutions');
+      const [r, l] = await Promise.all([
+        api.get('/institutions'),
+        api.get('/letterheads', { silent: true }),
+      ]);
       setData(r.data.data[0] || null);
+      setKop(l.data.data[0]?.header_markdown || '');
     } catch { /* pesan sudah muncul dari api.js */ } finally { setMuat(false); }
   }
 
@@ -74,6 +84,7 @@ export default function Sekolah() {
     setHasil([]);
     setCatatan('');
     setPeringatan(false);
+    setCatatanLogo('');
   }
 
   function tutupForm() {
@@ -133,11 +144,36 @@ export default function Sekolah() {
     }
   }
 
+  async function unggahLogo(slot, file) {
+    if (!file) return;
+    setCatatanLogo('');
+    if (!['image/png', 'image/jpeg'].includes(file.type)) {
+      setCatatanLogo('Logo harus PNG atau JPG.');
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      setCatatanLogo('Logo maksimal 2 MB.');
+      return;
+    }
+    setUnggahSlot(slot);
+    try {
+      const fd = new FormData();
+      fd.append(slot, file);
+      await api.post('/institutions/logos', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
+      await muatSekolah();
+    } catch { /* pesan sudah muncul dari api.js */ } finally { setUnggahSlot(null); }
+  }
+
   async function simpan(e) {
     e.preventDefault();
     setSimpanLoading(true);
     try {
-      await api.put('/institutions/me', { name: form.name, npsn: form.npsn, address: form.address });
+      await Promise.all([
+        api.put('/institutions/me', { name: form.name, npsn: form.npsn, address: form.address }),
+        // Kop hanya dikirim kalau berhasil dimuat; kalau GET tadi gagal, jangan
+        // sampai menyimpan string kosong dan menghapus kop yang sudah ada.
+        ...(kop === null ? [] : [api.put('/letterheads/me', { header_markdown: kop })]),
+      ]);
       tutupForm();
       await muatSekolah();
     } catch { /* pesan sudah muncul dari api.js */ } finally { setSimpanLoading(false); }
@@ -154,7 +190,7 @@ export default function Sekolah() {
             : (
               <Group justify="space-between" align="flex-start" wrap="wrap">
                 <Group>
-                  <Avatar color="teal" size="lg" radius="md">{(data.name || '?').trim()[0].toUpperCase()}</Avatar>
+                  <Avatar src={logoUrl(data.logo_path)} color="teal" size="lg" radius="md">{(data.name || '?').trim()[0].toUpperCase()}</Avatar>
                   <div>
                     <Text size="lg" fw={700}>{data.name}</Text>
                     <Text size="sm" c="dimmed">{data.address || 'Alamat belum diisi'}</Text>
@@ -189,9 +225,31 @@ export default function Sekolah() {
 
             <TextInput label="Nama sekolah" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} mb="sm" />
             <TextInput label="NPSN" value={form.npsn || ''} onChange={(e) => setForm({ ...form, npsn: e.target.value })} mb="sm" />
-            <Textarea label="Alamat" autosize minRows={2} value={form.address || ''} onChange={(e) => setForm({ ...form, address: e.target.value })} mb="md" />
+            <Textarea label="Alamat" autosize minRows={2} value={form.address || ''} onChange={(e) => setForm({ ...form, address: e.target.value })} mb="sm" />
 
-            <Group>
+            <Textarea label="Baris pemerintah & dinas (kop surat)" autosize minRows={2} maxRows={4} value={kop ?? ''} onChange={(e) => setKop(e.target.value)} mb="md"
+              description="Satu baris = satu baris kop. Nama sekolah dan alamat diambil otomatis dari kolom di atas."
+              placeholder={'cth: KEMENTERIAN AGAMA REPUBLIK INDONESIA\nKANTOR KEMENTERIAN AGAMA KABUPATEN PASURUAN'} />
+
+            <Title order={5} mt="sm" mb={4}>Logo kop surat</Title>
+            <Text size="xs" c="dimmed" mb="sm">Langsung tersimpan begitu berkas dipilih. PNG atau JPG, maksimal 2 MB.</Text>
+            <Group grow align="flex-start">
+              <div>
+                <FileInput label="Logo pemerintah provinsi" placeholder="Klik untuk unggah logo provinsi/kabupaten" accept="image/png,image/jpeg" value={null}
+                  disabled={!!unggahSlot} onChange={(f) => unggahLogo('kiri', f)} />
+                {unggahSlot === 'kiri' && <Text size="xs" c="dimmed" mt={4}>Mengunggah...</Text>}
+                {data?.logo_left_path && <Image src={logoUrl(data.logo_left_path)} alt="Logo pemerintah" h={64} w="auto" fit="contain" mt="xs" />}
+              </div>
+              <div>
+                <FileInput label="Logo sekolah" placeholder="Klik untuk unggah logo sekolah" accept="image/png,image/jpeg" value={null}
+                  disabled={!!unggahSlot} onChange={(f) => unggahLogo('kanan', f)} />
+                {unggahSlot === 'kanan' && <Text size="xs" c="dimmed" mt={4}>Mengunggah...</Text>}
+                {data?.logo_path && <Image src={logoUrl(data.logo_path)} alt="Logo sekolah" h={64} w="auto" fit="contain" mt="xs" />}
+              </div>
+            </Group>
+            {catatanLogo && <Text size="xs" c="red" mt={4}>{catatanLogo}</Text>}
+
+            <Group mt="md">
               <Button type="submit" loading={simpanLoading}>Simpan</Button>
               <Button variant="outline" onClick={tutupForm}>Batal</Button>
             </Group>
