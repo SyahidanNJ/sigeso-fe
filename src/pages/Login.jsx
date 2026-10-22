@@ -33,7 +33,8 @@ export default function Login() {
           <Button type="submit" fullWidth loading={loading}>Masuk</Button>
         </form>
         {msg && <Alert color="red" mt="md">{msg}</Alert>}
-        <Anchor component={Link} to="/register" mt="sm" display="block">Belum punya akun? Daftar</Anchor>
+        <Anchor component={Link} to="/lupa-sandi" mt="sm" display="block">Lupa kata sandi?</Anchor>
+        <Anchor component={Link} to="/register" mt="xs" display="block">Belum punya akun? Daftar</Anchor>
       </Paper>
     </Container>
   );

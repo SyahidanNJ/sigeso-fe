@@ -5,6 +5,8 @@ import { pesanBus } from './lib/api';
 import Layout from './components/Layout';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import LupaSandi from './pages/LupaSandi';
+import ResetSandi from './pages/ResetSandi';
 import Dashboard from './pages/Dashboard';
 import Sekolah from './pages/Sekolah';
 import Kelas from './pages/Kelas';
@@ -12,6 +14,7 @@ import Soal from './pages/Soal';
 import Cetak from './pages/Cetak';
 import Nilai from './pages/Nilai';
 import Profil from './pages/Profil';
+import Pengguna from './pages/Pengguna';
 
 function Daftarkan() {
   pesanBus.dorong = useToast();
@@ -27,6 +30,8 @@ export default function App() {
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/lupa-sandi" element={<LupaSandi />} />
+          <Route path="/reset-sandi" element={<ResetSandi />} />
           <Route element={<Layout />}>
             <Route path="/" element={<Dashboard />} />
             <Route path="/sekolah" element={<Sekolah />} />
@@ -38,6 +43,7 @@ export default function App() {
             <Route path="/cetak" element={<Cetak />} />
             <Route path="/nilai" element={<Nilai />} />
             <Route path="/profil" element={<Profil />} />
+            <Route path="/pengguna" element={<Pengguna />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Route>
         </Routes>

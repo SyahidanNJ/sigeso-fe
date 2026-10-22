@@ -11,6 +11,7 @@ const MENU = [
   { ke: '/soal', label: 'Bank Soal' },
   { ke: '/cetak', label: 'Cetak' },
   { ke: '/nilai', label: 'Nilai' },
+  { ke: '/pengguna', label: 'Pengguna', peran: ['superadmin', 'admin'] },
 ];
 
 const PERAN = { superadmin: 'Super Admin', admin: 'Admin', guru: 'Guru' };
@@ -98,7 +99,7 @@ export default function Layout() {
         </Group>
       </AppShell.Header>
       <AppShell.Navbar p="md">
-        {MENU.map((m) => (
+        {MENU.filter((m) => !m.peran || m.peran.includes(user?.role)).map((m) => (
           <NavLink key={m.ke} label={m.label} active={lok.pathname === m.ke} onClick={() => nav(m.ke)} />
         ))}
       </AppShell.Navbar>
