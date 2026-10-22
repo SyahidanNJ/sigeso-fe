@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Alert, Button, Group, NumberInput, Paper, Select, Table, Text, Textarea, TextInput, Title } from '@mantine/core';
+import { Alert, Button, CloseButton, Group, NumberInput, Paper, Select, Table, Text, Textarea, TextInput, Title } from '@mantine/core';
 import { useDebouncedValue } from '@mantine/hooks';
 import api from '../lib/api';
 import Kosong from '../components/Kosong';
@@ -22,8 +22,11 @@ export default function BankSoal({ subBab }) {
   const [hapus, setHapus] = useState(null);
   const [ubah, setUbah] = useState(null);
   const [cari, setCari] = useState('');
-  // Satu ketikan tidak memicu request; baru setelah berhenti 300 ms.
-  const kata = useDebouncedValue(cari.trim(), 300);
+  // Mantine 8 mengembalikan [nilai, cancel]; hanya nilainya yang dipakai.
+  const [kata] = useDebouncedValue(cari.trim(), 300);
+
+  // Kata cari lama dibuang saat subbab berganti agar daftar baru tak tampak kosong.
+  useEffect(() => { setCari(''); }, [subBab?.id]);
 
   // Daftar hanya berisi soal subbab terpilih, supaya tak tercampur mapel lain.
   // beforeId memuat halaman berikutnya ke arah soal lama lalu menyambungnya.
@@ -96,6 +99,8 @@ export default function BankSoal({ subBab }) {
           onChange={(e) => setCari(e.target.value)}
           mb="md"
           maw={420}
+          autoComplete="off"
+          rightSection={cari ? <CloseButton aria-label="Bersihkan pencarian" onClick={() => setCari('')} /> : null}
           description={kata && kata !== cari.trim() ? 'Mencari…' : undefined}
         />
         {daftar.length === 0 ? <Kosong teks={kata ? `Tidak ada soal yang memuat "${kata}".` : subBab ? 'Belum ada soal di subbab ini. Buat lewat Generate di atas.' : 'Bank masih kosong. Pilih subbab di bar atas, lalu buat lewat Generate di atas.'} /> : JENIS_SOAL.map(({ qtype, label }) => {
