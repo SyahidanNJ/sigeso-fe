@@ -228,7 +228,7 @@ export default function Sekolah() {
             <Textarea label="Alamat" autosize minRows={2} value={form.address || ''} onChange={(e) => setForm({ ...form, address: e.target.value })} mb="sm" />
 
             <Textarea label="Baris pemerintah & dinas (kop surat)" autosize minRows={2} maxRows={4} value={kop ?? ''} onChange={(e) => setKop(e.target.value)} mb="md"
-              description="Satu baris = satu baris kop. Nama sekolah dan alamat diambil otomatis dari kolom di atas."
+              description="Kosongkan agar kop dibuat otomatis dari nama & alamat sekolah. Satu baris = satu baris kop; nama sekolah dan alamat tetap diambil dari kolom di atas."
               placeholder={'cth: KEMENTERIAN AGAMA REPUBLIK INDONESIA\nKANTOR KEMENTERIAN AGAMA KABUPATEN PASURUAN'} />
 
             <Title order={5} mt="sm" mb={4}>Logo kop surat</Title>
