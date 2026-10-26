@@ -8,5 +8,6 @@ Frontend Sigeso (React 18 + Vite 5, CSS vanilla).
 2. `npm install` → `npm run dev` → buka `http://localhost:5173`
 3. Login dulu (`/login`), token tersimpan di localStorage.
 
-Halaman: Dashboard, Sekolah, Kelas & Siswa, Materi (+sumber),
-Bank Soal, Ujian, Cetak, Nilai (+ekspor Excel/PDF/Word).
+Halaman: Dashboard, Profil, Sekolah, Materi (+sumber), Bank Soal, Ujian,
+Pengguna. Alurnya satu lembar per kelas: buat ujian → setujui soal → cetak
+soal dan kunci.

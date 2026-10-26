@@ -9,10 +9,8 @@ import LupaSandi from './pages/LupaSandi';
 import ResetSandi from './pages/ResetSandi';
 import Dashboard from './pages/Dashboard';
 import Sekolah from './pages/Sekolah';
-import Kelas from './pages/Kelas';
 import Soal from './pages/Soal';
-import Cetak from './pages/Cetak';
-import Nilai from './pages/Nilai';
+import Ujian from './pages/Ujian';
 import Profil from './pages/Profil';
 import Pengguna from './pages/Pengguna';
 
@@ -34,16 +32,17 @@ export default function App() {
           <Route path="/reset-sandi" element={<ResetSandi />} />
           <Route element={<Layout />}>
             <Route path="/" element={<Dashboard />} />
-            <Route path="/sekolah" element={<Sekolah />} />
-            <Route path="/kelas" element={<Kelas />} />
+            <Route path="/ujian" element={<Ujian />} />
             <Route path="/soal" element={<Soal />} />
-            <Route path="/materi" element={<Navigate to="/soal" replace />} />
-            <Route path="/bank" element={<Navigate to="/soal?tab=soal" replace />} />
-            <Route path="/ujian" element={<Navigate to="/soal?tab=ujian" replace />} />
-            <Route path="/cetak" element={<Cetak />} />
-            <Route path="/nilai" element={<Nilai />} />
+            <Route path="/sekolah" element={<Sekolah />} />
             <Route path="/profil" element={<Profil />} />
             <Route path="/pengguna" element={<Pengguna />} />
+            {/* Alamat lama tetap hidup supaya tautan/bookmark tak jadi 404. */}
+            <Route path="/materi" element={<Navigate to="/soal" replace />} />
+            <Route path="/bank" element={<Navigate to="/soal" replace />} />
+            <Route path="/cetak" element={<Navigate to="/ujian" replace />} />
+            <Route path="/nilai" element={<Navigate to="/" replace />} />
+            <Route path="/kelas" element={<Navigate to="/profil" replace />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Route>
         </Routes>

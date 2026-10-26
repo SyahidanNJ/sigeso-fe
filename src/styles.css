@@ -13,61 +13,19 @@ body { margin: 0; font-family: system-ui, "Segoe UI", Roboto, sans-serif; backgr
 h1, h2, h3 { color: var(--sisi); letter-spacing: 0.2px; }
 button, a, input, select, textarea { font-size: 15px; }
 :focus-visible { outline: 3px solid var(--aksen); outline-offset: 2px; }
-.layout { display: flex; min-height: 100vh; }
-.side { width: 228px; background: var(--sisi); color: #e6f2ef; padding: 20px 14px; display: flex; flex-direction: column; gap: 4px; }
-.side a.merek { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
-.side a.merek img { flex: none; }
-.side a.merek span { display: flex; flex-direction: column; line-height: 1.2; }
-.side a.merek strong { color: #ffffff; font-size: 19px; letter-spacing: 0.5px; }
-.side a.merek small { color: #8fb3ad; font-size: 11px; }
-.side h2 { font-size: 20px; margin: 0 0 14px; color: #ffffff; padding-left: 12px; }
-.side a { color: #bcd6d1; text-decoration: none; padding: 10px 12px; border-radius: 10px; display: block; }
-.side a:hover { background: #134e4a; color: #fff; }
-.side a.aktif { background: var(--primer); color: #fff; font-weight: 600; }
 .kartu { background: var(--kartu); border: 1px solid var(--garis); border-radius: 14px; padding: 18px; margin-bottom: 16px; box-shadow: 0 1px 4px rgb(11 46 43 / 0.08); }
-/* Elemen form/tombol/tabel milik Mantine (jangan style global di sini) */
-.pesan { padding: 10px; border-radius: 10px; margin: 8px 0; }
-.gagal { background: #fef2f2; color: #7f1d1d; }
-.ok { background: #ecfdf5; color: #14532d; }
-.baris { display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-end; }
-.baris > * { flex: 1; min-width: 140px; }
-.lbl { font-weight: 600; margin: 10px 0 2px; font-size: 14px; color: var(--sisi); }
-.baris-dempet { display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-end; margin-top: 8px; }
-.lencana { display: inline-block; padding: 3px 12px; border-radius: 999px; font-size: 13px; font-weight: 600; }
-.l-hijau { background: #dcfce7; color: #14532d; }
-.l-amber { background: #fef3c7; color: #92400e; }
-.l-teal { background: #ccfbf1; color: #115e59; }
-.l-abu { background: #e2e8f0; color: #475569; }
-.btn2 { background: #ffffff; color: var(--primer-gelap); border: 2px solid var(--primer); }
-.btn2:hover { background: #e0efec; }
-.kepala { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 16px; margin-bottom: 4px; }
-.kepala h2 { margin: 0; }
-.kepala .sub { color: #41605a; font-size: 15px; }
-.sub { color: #41605a; font-size: 15px; }
-.angka { display: flex; gap: 8px; flex-wrap: wrap; margin: 12px 0; }
-.stat { flex: 1; min-width: 120px; background: var(--kartu); border: 1px solid var(--garis); border-left: 6px solid var(--primer); border-radius: 12px; padding: 10px 14px; }
-.stat b { font-size: 24px; color: var(--sisi); display: block; }
-.stat span { font-size: 13px; color: #41605a; }
 .kosong { text-align: center; padding: 28px 12px; color: #41605a; }
 .kosong p { margin: 0 0 12px; font-size: 16px; }
 .popup-teks { white-space: pre-wrap; max-height: 40vh; overflow: auto; }
-@media (max-width: 720px) {
-  .layout { flex-direction: column; }
-  .side { width: auto; flex-direction: row; flex-wrap: wrap; align-items: center; }
-  .side h2 { margin: 0 8px 0 0; }
-  .side a { padding: 8px 10px; }
-}
+
 /* Bar pemilih subbab menempel di bawah header; di layar sempit ia melipat jadi tinggi. */
 .pemilih { position: sticky; top: calc(var(--app-shell-header-height, 56px) + 8px); z-index: 20; }
 @media (max-width: 1199px) {
   .pemilih { position: static; }
 }
+
 .kata-masuk { animation: kataMasuk 0.7s ease both; }
 @keyframes kataMasuk { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: none; } }
-/* Dashboard: nomor langkah alur. Warnanya menandai keadaan nyata langkah itu. */
-.lingkar { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 999px; font-size: 12px; font-weight: 700; background: #e2e8f0; color: #475569; }
-.lingkar[data-ada='1'] { background: var(--primer); color: #fff; }
-.lingkar[data-fokus='1'] { background: var(--aksen); color: #fff; }
 @media (prefers-reduced-motion: reduce) {
   .kata-masuk { animation: none; }
 }

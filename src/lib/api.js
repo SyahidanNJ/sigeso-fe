@@ -15,6 +15,7 @@ const PESAN_KODE = {
   LLM_INVALID_JSON: 'AI tidak mengembalikan jawaban yang bisa dibaca. Coba lagi.',
   LLM_TIMEOUT: 'Proses AI terlalu lama. Coba lagi.',
   LLM_ERROR: 'Layanan AI sedang bermasalah. Coba lagi nanti.',
+  LLM_EMPTY: 'AI tidak menghasilkan soal yang bisa dipakai. Coba lagi.',
 };
 
 const api = axios.create({ baseURL: import.meta.env.VITE_API_URL });

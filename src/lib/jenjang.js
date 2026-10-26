@@ -15,3 +15,17 @@ export const opsiKelas = (jenjang) => {
     return { value: String(k), label: `Kelas ${k}` };
   });
 };
+
+// Tahun ajaran berganti tiap Juli: Januari–Juni masih tahun ajaran sebelumnya.
+const awalTahunAjaran = (() => {
+  const d = new Date();
+  return d.getFullYear() - (d.getMonth() >= 6 ? 0 : 1);
+})();
+
+// Opsi 5 tahun ke belakang sampai tahun depan, urut lama ke baru.
+export const TAHUN_AJARAN = Array.from(
+  { length: 7 },
+  (_, i) => `${awalTahunAjaran - 5 + i}/${awalTahunAjaran - 4 + i}`
+);
+
+export const TAHUN_AJARAN_KINI = `${awalTahunAjaran}/${awalTahunAjaran + 1}`;

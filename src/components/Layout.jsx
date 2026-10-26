@@ -1,33 +1,36 @@
 import { useEffect, useState } from 'react';
-import { AppShell, Avatar, Burger, Group, Menu, NavLink, Text, UnstyledButton } from '@mantine/core';
+import { AppShell, Avatar, Box, Burger, Collapse, Group, Menu, NavLink, Text, UnstyledButton } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import api from '../lib/api';
 
 const MENU = [
   { ke: '/', label: 'Dashboard' },
-  { ke: '/sekolah', label: 'Sekolah' },
-  { ke: '/kelas', label: 'Kelas & Siswa' },
+  { ke: '/ujian', label: 'Ujian' },
+];
+
+// Menu yang jarang dipakai disembunyikan di balik "Advanced".
+const LANJUTAN = [
   { ke: '/soal', label: 'Bank Soal' },
-  { ke: '/cetak', label: 'Cetak' },
-  { ke: '/nilai', label: 'Nilai' },
-  { ke: '/pengguna', label: 'Pengguna', peran: ['superadmin', 'admin'] },
+  { ke: '/sekolah', label: 'Sekolah' },
 ];
 
 const PERAN = { superadmin: 'Super Admin', admin: 'Admin', guru: 'Guru' };
+const LEBAR_NAVBAR = 230;
 
 // Bergantian di header; panjangnya dijaga seragam agar tata letak tak bergeser.
 const KATA = [
   'Buat soal ujian semakin mudah',
   'Dari materi langsung jadi soal',
-  'Koreksi jawaban jadi lebih cepat',
-  'Cetak, koreksi, nilai otomatis',
+  'Satu lembar soal, fotokopi sendiri',
+  'Setujui soal, cetak, selesai',
 ];
 
 export default function Layout() {
   const nav = useNavigate();
   const lok = useLocation();
   const [buka, { toggle }] = useDisclosure();
+  const [lanjut, setLanjut] = useState(() => LANJUTAN.some((m) => m.ke === lok.pathname));
   const [user, setUser] = useState(() => {
     try { return JSON.parse(localStorage.getItem('sigeso_user')) || null; } catch { return null; }
   });
@@ -38,7 +41,13 @@ export default function Layout() {
     return () => clearInterval(t);
   }, []);
 
-  // Header ikut berubah saat nama diganti dari halaman Profil.
+  // Pindah ke menu di luar Advanced menutupnya, supaya submenu tak menggantung
+  // terbuka saat guru pindah tab.
+  useEffect(() => {
+    if (!LANJUTAN.some((m) => m.ke === lok.pathname)) setLanjut(false);
+  }, [lok.pathname]);
+
+  // Header ikut berubah saat nama atau kelas diganti dari halaman Profil.
   useEffect(() => {
     const muat = () => api.get('/auth/me').then((r) => setUser(r.data.data)).catch(() => {});
     muat();
@@ -54,24 +63,29 @@ export default function Layout() {
 
   const nama = user?.name || 'Pengguna';
   const peran = PERAN[user?.role] || 'Guru';
+  const admin = ['superadmin', 'admin'].includes(user?.role);
 
   return (
     <AppShell
       header={{ height: 56 }}
-      navbar={{ width: 230, breakpoint: 'sm', collapsed: { mobile: !buka } }}
+      navbar={{ width: LEBAR_NAVBAR, breakpoint: 'sm', collapsed: { mobile: !buka } }}
       padding="md"
     >
       <AppShell.Header>
         <Group h="100%" px="md" justify="space-between" wrap="nowrap">
           <Group gap="sm" wrap="nowrap">
             <Burger opened={buka} onClick={toggle} hiddenFrom="sm" size="sm" />
-            <img src="/sigeso-logo.svg" alt="Sigeso" height={64} style={{ cursor: 'pointer' }} onClick={() => nav('/')} />
+            {/* Area logo dibuat selebar navbar (dikurangi padding header + jarak
+                antar item) supaya garis pemisah tagline sejajar tepi navbar. */}
+            <Box w={{ base: 'auto', md: LEBAR_NAVBAR - 16 - 8 }} style={{ display: 'flex', alignItems: 'center' }}>
+              <img src="/sigeso-logo.svg" alt="Sigeso" height={40} style={{ cursor: 'pointer' }} onClick={() => nav('/')} />
+            </Box>
             <Text
               key={kata}
               className="kata-masuk"
               size="sm"
               c="dimmed"
-              visibleFrom="sm"
+              visibleFrom="md"
               style={{ borderLeft: '1px solid var(--garis)', paddingLeft: 14, minWidth: 250 }}
             >
               {KATA[kata]}
@@ -82,9 +96,11 @@ export default function Layout() {
               <UnstyledButton>
                 <Group gap="xs" wrap="nowrap">
                   <Avatar color="teal" radius="xl" size="sm">{nama[0].toUpperCase()}</Avatar>
-                  <div>
-                    <Text size="sm" fw={600} lh={1.2}>{nama}</Text>
-                    <Text size="xs" c="dimmed" lh={1.2}>{peran}</Text>
+                  <div style={{ minWidth: 0 }}>
+                    <Text size="sm" fw={600} lh={1.2} truncate maw={{ base: 110, sm: 220 }}>{nama}</Text>
+                    <Text size="xs" c="dimmed" lh={1.2} truncate maw={{ base: 110, sm: 220 }}>
+                      {user?.class_name || peran}
+                    </Text>
                   </div>
                 </Group>
               </UnstyledButton>
@@ -92,6 +108,7 @@ export default function Layout() {
             <Menu.Dropdown>
               <Menu.Label>{nama} — {peran}</Menu.Label>
               <Menu.Item onClick={() => nav('/profil')}>Profil</Menu.Item>
+              {admin && <Menu.Item onClick={() => nav('/pengguna')}>Pengguna</Menu.Item>}
               <Menu.Divider />
               <Menu.Item color="red" onClick={keluar}>Keluar</Menu.Item>
             </Menu.Dropdown>
@@ -99,9 +116,28 @@ export default function Layout() {
         </Group>
       </AppShell.Header>
       <AppShell.Navbar p="md">
-        {MENU.filter((m) => !m.peran || m.peran.includes(user?.role)).map((m) => (
+        {MENU.map((m) => (
           <NavLink key={m.ke} label={m.label} active={lok.pathname === m.ke} onClick={() => nav(m.ke)} />
         ))}
+        <NavLink
+          label="Advanced"
+          mt={4}
+          opened={lanjut}
+          onClick={() => setLanjut((v) => !v)}
+          active={LANJUTAN.some((m) => m.ke === lok.pathname)}
+          rightSection={
+            // Mantine sudah memutar rightSection 90° saat terbuka: kanan → bawah.
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" strokeWidth="2" aria-hidden="true">
+              <path d="m9 6 6 6-6 6" />
+            </svg>
+          }
+        />
+        <Collapse in={lanjut}>
+          {LANJUTAN.map((m) => (
+            <NavLink key={m.ke} label={m.label} pl="lg" active={lok.pathname === m.ke} onClick={() => nav(m.ke)} />
+          ))}
+        </Collapse>
       </AppShell.Navbar>
       <AppShell.Main>
         <Outlet />

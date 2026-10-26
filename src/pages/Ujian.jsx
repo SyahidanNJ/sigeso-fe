@@ -1,13 +1,13 @@
-import { Fragment, useEffect, useState } from 'react';
-import { Alert, Badge, Button, Checkbox, Group, Paper, Select, Table, Text, TextInput, Title } from '@mantine/core';
-import api from '../lib/api';
-import Panduan from '../components/Panduan';
+import { useEffect, useState } from 'react';
+import {
+  Alert, Autocomplete, Badge, Button, Group, NumberInput, Paper, Select, SimpleGrid, Table, Text, Textarea, TextInput, Title,
+} from '@mantine/core';
+import { useNavigate } from 'react-router-dom';
+import api, { unduhBerkas } from '../lib/api';
 import Kosong from '../components/Kosong';
 import Modal from '../components/Modal';
 
-const BATAS = 200; // samakan dengan LIMIT di listQuestions
-const MAKS = 100;  // batas question_ids di setExamItems
-// Jenis ujian tercetak sebagai judul lembar, menggantikan judul bab.
+// Jenis ujian tercetak sebagai judul lembar.
 const JENIS_UJIAN = [
   'Ulangan Harian',
   'Penilaian Tengah Semester (PTS)',
@@ -20,286 +20,377 @@ const JENIS_UJIAN = [
   'Penilaian Ujian Satuan Pendidikan (USP)',
   'Try Out',
 ];
-const KUNCI_SUBBAB = 'sigeso_subbab'; // sama dengan Soal.jsx
-
-// Subbab yang sedang digarap di halaman Materi & Soal, dipakai sebagai saringan awal di sini.
-function subBabTerpilih() {
-  try { return JSON.parse(sessionStorage.getItem(KUNCI_SUBBAB))?.id || null; } catch { return null; }
-}
+const NAMA_JENIS = { PG: 'Pilihan ganda', ISIAN: 'Isian', URAIAN: 'Uraian' };
+const barisAwal = () => [{ name: '', count: 5 }];
 
 export default function Ujian() {
-  const [ujian, setUjian] = useState([]);
-  const [bank, setBank] = useState([]);
-  const [adaLagi, setAdaLagi] = useState(false);
-  const [kelas, setKelas] = useState([]);
+  const nav = useNavigate();
+  const [profil, setProfil] = useState(null);
+  const [kelasList, setKelasList] = useState([]);
+  const [kelasId, setKelasId] = useState('');
   const [mapelList, setMapelList] = useState([]);
+  const [topikList, setTopikList] = useState([]);
+  const [form, setForm] = useState({ mapel: '', exam_type: 'Ulangan Harian', paper_size: 'A4' });
+  const [baris, setBaris] = useState(barisAwal);
+  const [ujian, setUjian] = useState([]);
   const [aktif, setAktif] = useState(null);
-  const [dipilih, setDipilih] = useState([]);
-  const [form, setForm] = useState({ title: '', exam_type: 'Ulangan Harian', class_id: '', subject_id: '' });
-  const [tipe, setTipe] = useState('SEMUA');
-  const [materi, setMateri] = useState('semua');
-  const [cari, setCari] = useState('');
+  const [items, setItems] = useState([]);
+  const [errors, setErrors] = useState([]);
   const [msg, setMsg] = useState('');
   const [loading, setLoading] = useState(false);
-  const [ubahUjian, setUbahUjian] = useState(null);
-  const [hapusUjian, setHapusUjian] = useState(null);
-  const [bukaBuat, setBukaBuat] = useState(false);
-  const [msgBuat, setMsgBuat] = useState('');
+  const [hapus, setHapus] = useState(null);
+  const [ubah, setUbah] = useState(null);
 
-  async function muatBank(beforeId) {
-    try {
-      const b = await api.get('/questions', beforeId ? { params: { before_id: beforeId } } : undefined);
-      setBank((d) => (beforeId ? [...d, ...b.data.data] : b.data.data));
-      setAdaLagi(b.data.data.length === BATAS);
-    } catch { /* pesan sudah muncul dari api.js */ }
+  async function muatUjian() {
+    setUjian((await api.get('/exams')).data.data);
   }
 
-  async function muat() {
-    try {
-      const u = await api.get('/exams');
-      setUjian(u.data.data);
-      const k = await api.get('/classes');
-      setKelas(k.data.data);
-      const m = await api.get('/subjects');
-      setMapelList(m.data.data);
-      setForm((f) => (f.class_id || !k.data.data[0] ? f : { ...f, class_id: String(k.data.data[0].id) }));
-    } catch { /* pesan sudah muncul dari api.js */ }
-  }
-  useEffect(() => { muat(); muatBank(); }, []);
-  // Ganti mapel = mulai dari awal: daftar ujian & soal ikut mapel itu saja.
-  useEffect(() => { setAktif(null); setDipilih([]); }, [form.subject_id]);
+  // Kelas dan mapel dimuat sekali. Mapel sengaja diambil semua tingkat sekolah
+  // supaya pilihannya lengkap; yang menentukan isi soal tetap kelas yang dipilih.
+  useEffect(() => {
+    (async () => {
+      try {
+        const [p, k, s] = await Promise.all([api.get('/auth/me'), api.get('/classes'), api.get('/subjects')]);
+        const daftar = k.data.data;
+        setProfil(p.data.data);
+        setKelasList(daftar);
+        setMapelList(s.data.data);
+        const awal = p.data.data.default_class_id || daftar[0]?.id;
+        setKelasId(awal ? String(awal) : '');
+        await muatUjian();
+      } catch { /* pesan sudah muncul dari api.js */ }
+    })();
+  }, []);
 
-  // Saringan awal saat ujian dibuka: subbab soal ujian itu; kalau ujiannya masih kosong,
-  // ikut subbab yang sedang digarap di halaman Materi & Soal.
-  function saringanAwal(u, items) {
-    const sub = items.find((q) => q.sub_chapter_id)?.sub_chapter_id || subBabTerpilih();
-    if (sub && bank.some((q) => q.sub_chapter_id === sub && (!u.subject_id || q.subject_id === u.subject_id))) return `s:${sub}`;
-    if (u.subject_id && bank.some((q) => q.subject_id === u.subject_id)) return `m:${u.subject_id}`;
-    return 'semua';
+  // Tingkat dipakai untuk mencocokkan mapel dan topik milik kelas yang dipilih.
+  const level = kelasList.find((k) => String(k.id) === kelasId)?.level || null;
+
+  // Mapel diketik bebas; kalau namanya cocok dengan mapel tingkat ini, topiknya dimuat.
+  const mapelId = mapelList.find(
+    (m) => m.name.toLowerCase() === form.mapel.trim().toLowerCase() && m.grade_level === level
+  )?.id || null;
+  useEffect(() => {
+    if (!mapelId) { setTopikList([]); return; }
+    api.get('/topics', { params: { subject_id: mapelId } })
+      .then((r) => setTopikList(r.data.data))
+      .catch(() => { /* pesan sudah muncul dari api.js */ });
+  }, [mapelId]);
+
+  function gantiBaris(i, patch) {
+    setBaris((b) => b.map((x, j) => (j === i ? { ...x, ...patch } : x)));
   }
 
-  async function pilihUjian(u) {
+  async function bukaUjian(u) {
     setAktif(u);
+    try { setItems((await api.get(`/exams/${u.id}/items`)).data.data); } catch { setItems([]); }
+  }
+
+  async function generate(e) {
+    e.preventDefault();
+    setMsg(''); setErrors([]);
+    if (!kelasId) { setMsg('Pilih kelasnya dulu.'); return; }
+    if (!form.mapel.trim()) { setMsg('Mapel belum diisi.'); return; }
+    const isi = baris.filter((b) => b.name.trim());
+    if (!isi.length) { setMsg('Isi minimal satu topik.'); return; }
+    setLoading(true);
     try {
-      const it = await api.get(`/exams/${u.id}/items`);
-      const ids = it.data.data.map((x) => x.id);
-      setDipilih(ids);
-      setMateri(saringanAwal(u, it.data.data));
+      const r = await api.post('/generate', {
+        class_id: Number(kelasId),
+        exam_type: form.exam_type,
+        subject_name: form.mapel.trim(),
+        paper_size: form.paper_size,
+        topics: isi.map((b) => ({ name: b.name.trim(), count: Number(b.count) || 1 })),
+      });
+      const hasil = r.data.data;
+      setErrors(hasil.errors || []);
+      await muatUjian();
+      // Semua topik gagal: ujian kosongnya sudah dibuang server, jangan dibuka.
+      if (hasil.items?.length) await bukaUjian(hasil.exam);
+    } catch (e) {
+      // Server menolak dengan daftar error per topik; toast sudah menampilkan ringkasannya.
+      setErrors(e.response?.data?.details || []);
+    } finally { setLoading(false); }
+  }
+
+  // Menyetujui atau membatalkan persetujuan satu soal.
+  async function setujui(it) {
+    try {
+      await api.put(`/exams/${aktif.id}/items/${it.id}`, { approved: !it.approved }, { silent: true });
+      const r = await api.get(`/exams/${aktif.id}/items`);
+      setItems(r.data.data);
+      await muatUjian();
     } catch { /* pesan sudah muncul dari api.js */ }
   }
 
-  async function buat(e) {
-    e.preventDefault();
-    if (!form.subject_id) { setMsgBuat('Pilih mapelnya dulu.'); return; }
-    if (!form.class_id) { setMsgBuat('Pilih kelas dulu. Kalau belum ada, buat di halaman Kelas & Siswa.'); return; }
-    setMsgBuat('');
+  // Menyetujui semua sekaligus. Yang sudah disetujui tidak dikirim ulang supaya
+  // tidak berbalik jadi "Batalkan"; umpan baliknya badge "x dari y disetujui".
+  async function setujuiSemua() {
+    const belum = items.filter((i) => !i.approved);
+    if (!belum.length) return;
     setLoading(true);
     try {
-      const r = await api.post('/exams', { ...form, class_id: Number(form.class_id), subject_id: Number(form.subject_id) });
-      setBukaBuat(false);
-      setForm((f) => ({ ...f, title: '' }));
-      await muat();
-      pilihUjian(r.data.data); // langsung buka daftar soal supaya bisa ditempeli
+      await Promise.all(belum.map((i) => api.put(`/exams/${aktif.id}/items/${i.id}`, { approved: true }, { silent: true })));
+      const r = await api.get(`/exams/${aktif.id}/items`);
+      setItems(r.data.data);
+      await muatUjian();
     } catch { /* pesan sudah muncul dari api.js */ } finally { setLoading(false); }
   }
 
-  function bukaTambah() {
-    setMsgBuat('');
-    setForm((f) => ({ ...f, title: '', exam_type: f.exam_type || 'Ulangan Harian', class_id: f.class_id || (kelas[0] ? String(kelas[0].id) : '') }));
-    setBukaBuat(true);
-  }
-
-  const namaMapel = mapelList.find((m) => String(m.id) === form.subject_id)?.name || '';
-  const namaKelas = (id) => kelas.find((k) => k.id === id)?.name || '-';
-  const daftarUjian = ujian.filter((u) => String(u.subject_id) === form.subject_id);
-
-  function centang(id) {
-    if (!dipilih.includes(id) && dipilih.length >= MAKS) { setMsg(`Maksimal ${MAKS} soal per ujian.`); return; }
-    setMsg('');
-    setDipilih(dipilih.includes(id) ? dipilih.filter((x) => x !== id) : [...dipilih, id]);
-  }
-
-  async function simpan() {
-    setLoading(true);
+  async function hapusItem(it) {
     try {
-      await api.put(`/exams/${aktif.id}/items`, { question_ids: dipilih });
-      muat();
-    } catch { /* pesan sudah muncul dari api.js */ } finally { setLoading(false); }
-  }
-
-  async function simpanJudul(e) {
-    e.preventDefault();
-    setLoading(true);
-    try {
-      await api.put(`/exams/${ubahUjian.id}`, { title: ubahUjian.title, exam_type: ubahUjian.exam_type });
-      setUbahUjian(null);
-      await muat();
-    } catch { /* pesan sudah muncul dari api.js */ } finally { setLoading(false); }
-  }
-
-  // Hitung dulu lembar & nilainya supaya peringatan hapus menyebut angka nyata.
-  async function bukaHapus(u) {
-    try {
-      const [s, sub] = await Promise.all([
-        api.get(`/exams/${u.id}/sheets`),
-        api.get('/submissions', { params: { exam_id: u.id } }),
-      ]);
-      setHapusUjian({ ...u, lembar: s.data.data.length, nilai: sub.data.data.length });
+      await api.delete(`/exams/${aktif.id}/items/${it.id}`, { silent: true });
+      const r = await api.get(`/exams/${aktif.id}/items`);
+      setItems(r.data.data);
+      await muatUjian();
     } catch { /* pesan sudah muncul dari api.js */ }
   }
 
-  async function jalankanHapusUjian() {
+  async function simpanUbah(e) {
+    e.preventDefault();
     setLoading(true);
     try {
-      await api.delete(`/exams/${hapusUjian.id}`, { data: { dengan_nilai: true } });
-      if (aktif?.id === hapusUjian.id) { setAktif(null); setDipilih([]); }
-      setHapusUjian(null);
-      await muat();
+      const isi = { text: ubah.text, answer_key: ubah.answer_key, rubric: ubah.rubric || null };
+      if (ubah.qtype === 'PG') isi.options = ubah.opsiTeks.split('\n').map((s) => s.trim()).filter(Boolean);
+      await api.put(`/exams/${aktif.id}/items/${ubah.id}`, isi);
+      setUbah(null);
+      const r = await api.get(`/exams/${aktif.id}/items`);
+      setItems(r.data.data);
     } catch { /* pesan sudah muncul dari api.js */ } finally { setLoading(false); }
   }
 
-  // Pilihan materi diambil dari soal yang sudah dimuat, jadi selalu ada isinya.
-  const OPSI_MATERI = (() => {
-    const perMapel = new Map();
-    const perSub = new Map();
-    for (const q of bank) {
-      const namaMapel = q.mapel || 'Tanpa mapel';
-      if (q.subject_id && !perMapel.has(q.subject_id)) perMapel.set(q.subject_id, namaMapel);
-      if (q.sub_chapter_id && !perSub.has(q.sub_chapter_id)) {
-        perSub.set(q.sub_chapter_id, `${namaMapel}${q.tingkat ? ` t${q.tingkat}` : ''} › ${q.subbab || 'tanpa subbab'}`);
-      }
-    }
-    return [
-      { group: 'Per subbab', items: [...perSub].map(([id, label]) => ({ value: `s:${id}`, label })) },
-      { group: 'Per mapel', items: [...perMapel].map(([id, label]) => ({ value: `m:${id}`, label })) },
-    ].filter((g) => g.items.length);
-  })();
-
-  function cocokMateri(q) {
-    if (materi === 'semua') return true;
-    const [jenis, id] = materi.split(':');
-    return jenis === 'm' ? q.subject_id === Number(id) : q.sub_chapter_id === Number(id);
+  async function cetak(u, kunci) {
+    setLoading(true);
+    try {
+      const r = await api.post(`/exams/${u.id}/${kunci ? 'answer-key' : 'print'}`);
+      await unduhBerkas(r.data.data.download, `${kunci ? 'kunci' : 'soal'}-ujian-${u.id}.pdf`);
+    } catch { /* pesan sudah muncul dari api.js */ } finally { setLoading(false); }
   }
 
-  // Soal satu materi dikumpulkan berdampingan supaya mudah dibaca.
-  const tampil = bank
-    .filter((q) => cocokMateri(q) && (tipe === 'SEMUA' || q.qtype === tipe)
-      && q.text.toLowerCase().includes(cari.trim().toLowerCase()))
-    .sort((a, b) => `${a.mapel || ''}~${a.subbab || ''}`.localeCompare(`${b.mapel || ''}~${b.subbab || ''}`) || a.id - b.id);
-
-  const labelMateri = (q) => `${q.mapel || 'Tanpa mapel'}${q.tingkat ? ` t${q.tingkat}` : ''} › ${q.subbab || 'Tanpa subbab'}`;
-  // tampil sudah urut materi, jadi cukup dipotong tiap ganti label.
-  const kelompok = [];
-  for (const q of tampil) {
-    const label = labelMateri(q);
-    const akhir = kelompok[kelompok.length - 1];
-    if (akhir?.label === label) akhir.items.push(q); else kelompok.push({ label, items: [q] });
+  async function jalankanHapus() {
+    setLoading(true);
+    try {
+      await api.delete(`/exams/${hapus.id}`);
+      if (aktif?.id === hapus.id) { setAktif(null); setItems([]); }
+      setHapus(null);
+      await muatUjian();
+    } catch { /* pesan sudah muncul dari api.js */ } finally { setLoading(false); }
   }
 
-  const semuaTampil = tampil.length > 0 && tampil.every((q) => dipilih.includes(q.id));
-  const tersembunyi = dipilih.length - tampil.filter((q) => dipilih.includes(q.id)).length;
-  function centangSemua() {
-    if (semuaTampil) { setDipilih(dipilih.filter((id) => !tampil.some((q) => q.id === id))); return; }
-    const baru = tampil.filter((q) => !dipilih.includes(q.id)).map((q) => q.id);
-    if (dipilih.length + baru.length > MAKS) { setMsg(`Maksimal ${MAKS} soal per ujian.`); return; }
-    setMsg('');
-    setDipilih([...dipilih, ...baru]);
-  }
+  const jumlahSetuju = items.filter((i) => i.approved).length;
+  const hurufOpsi = ubah && ubah.qtype === 'PG'
+    ? ubah.opsiTeks.split('\n').filter((s) => s.trim()).map((_, i) => String.fromCharCode(65 + i))
+    : [];
+  const kelasSiap = Boolean(kelasId);
 
   return (
     <div>
-      <Panduan id="ujian" steps={['Pilih mapelnya dulu, nanti daftar ujian mapel itu muncul.', 'Klik + Tambah ujian, isi judul + kelas, lalu simpan — atau klik Pilih pada ujian yang sudah ada.', 'Daftar soal langsung mengikuti subbab pilihanmu di bar atas halaman Materi & Soal — ubah lewat "Saring materi" bila perlu, centang soalnya, tekan Simpan pilihan.']} />
+      <Title order={2} mb="sm">Ujian</Title>
+
+      {profil && !kelasList.length && (
+        <Alert color="orange" mb="md" title="Belum ada kelas">
+          Buat kelas dulu di Profil (jenjang, tingkat, tahun ajaran), lalu pilih di sini.
+          <Group mt="sm">
+            <Button size="xs" onClick={() => nav('/profil')}>Buka Profil</Button>
+          </Group>
+        </Alert>
+      )}
+
       <Paper withBorder shadow="xs" p="md" mb="md">
-        <Title order={3} mb="xs">Pilih mapel</Title>
-        {msg && <Alert color="orange" mb="sm">{msg}</Alert>}
-        <Select label="Mapel" maw={420} placeholder={mapelList.length ? '— pilih mapel —' : 'belum ada mapel'} data={mapelList.map((m) => ({ value: String(m.id), label: m.name }))} value={form.subject_id} onChange={(v) => setForm({ ...form, subject_id: v || '' })} allowDeselect={false} />
-        {!form.subject_id && <Text size="sm" c="dimmed" mt="sm">Pilih mapelnya dulu, nanti daftar ujian mapel itu muncul di bawah.</Text>}
-        {form.subject_id && (
-          <>
-            <Group justify="space-between" align="center" mt="lg" mb="xs">
-              <Title order={4}>Daftar ujian {namaMapel} ({daftarUjian.length})</Title>
-              <Button size="xs" onClick={bukaTambah}>+ Tambah ujian</Button>
+        <Title order={3} mb="xs">Buat ujian</Title>
+        <Text size="sm" c="dimmed" mb="sm">
+          Mapel bisa dipilih dari daftar atau diketik baru. Mapel baru tersimpan otomatis saat Generate.
+        </Text>
+        <form onSubmit={generate}>
+          {msg && <Alert color="orange" mb="sm">{msg}</Alert>}
+          <SimpleGrid cols={{ base: 1, sm: 2, lg: 4 }} mb="sm">
+            <Select
+              label="Kelas"
+              placeholder={kelasList.length ? '— pilih kelas —' : 'belum ada kelas'}
+              data={kelasList.map((k) => ({ value: String(k.id), label: `${k.name} (${k.academic_year})` }))}
+              value={kelasId}
+              onChange={(v) => setKelasId(v || '')}
+              allowDeselect={false}
+            />
+            <Autocomplete
+              label="Mapel"
+              placeholder="pilih atau ketik mapel baru"
+              data={[...new Set(mapelList.map((m) => m.name))]}
+              value={form.mapel}
+              onChange={(v) => { setForm({ ...form, mapel: v }); setBaris(barisAwal()); }}
+              disabled={!kelasSiap}
+            />
+            <Select
+              label="Jenis ujian"
+              data={JENIS_UJIAN}
+              value={form.exam_type}
+              onChange={(v) => setForm({ ...form, exam_type: v || 'Ulangan Harian' })}
+              allowDeselect={false}
+            />
+            <Select
+              label="Ukuran kertas"
+              data={['A4', 'F4']}
+              value={form.paper_size}
+              onChange={(v) => setForm({ ...form, paper_size: v || 'A4' })}
+              allowDeselect={false}
+            />
+          </SimpleGrid>
+
+          {baris.map((b, i) => (
+            <Group key={i} align="flex-end" mb="xs" gap="xs" wrap="wrap">
+              <div style={{ flex: '1 1 220px', minWidth: 0 }}>
+                <Autocomplete
+                  label={i === 0 ? 'Topik' : undefined}
+                  placeholder="pilih atau ketik topik baru"
+                  data={topikList.map((t) => t.name)}
+                  value={b.name}
+                  onChange={(v) => gantiBaris(i, { name: v })}
+                  disabled={!kelasSiap}
+                />
+              </div>
+              <NumberInput
+                label={i === 0 ? 'Jumlah soal' : undefined}
+                min={1}
+                max={20}
+                maw={140}
+                value={b.count}
+                onChange={(v) => gantiBaris(i, { count: v })}
+                disabled={!kelasSiap}
+              />
+              <Button
+                variant="subtle"
+                color="red"
+                mb={2}
+                onClick={() => setBaris((x) => (x.length > 1 ? x.filter((_, j) => j !== i) : x))}
+                disabled={baris.length === 1}
+              >
+                Hapus
+              </Button>
             </Group>
-            {daftarUjian.length === 0 ? <Kosong teks="Belum ada ujian untuk mapel ini. Klik + Tambah ujian." /> : (
-            <Table striped highlightOnHover mb="sm">
-              <Table.Thead><Table.Tr><Table.Th>Judul</Table.Th><Table.Th>Jenis</Table.Th><Table.Th>Kelas</Table.Th><Table.Th>N soal</Table.Th><Table.Th></Table.Th></Table.Tr></Table.Thead>
-              <Table.Tbody>{daftarUjian.map((u) => <Table.Tr key={u.id} style={aktif?.id === u.id ? { background: 'var(--mantine-color-teal-0)' } : null}><Table.Td>{u.title}</Table.Td><Table.Td>{u.exam_type || '-'}</Table.Td><Table.Td>{namaKelas(u.class_id)}</Table.Td><Table.Td>{u.n_soal}</Table.Td><Table.Td><Group gap={6} wrap="nowrap"><Button size="xs" onClick={() => pilihUjian(u)}>Pilih</Button><Button size="xs" variant="outline" onClick={() => setUbahUjian({ id: u.id, title: u.title, exam_type: u.exam_type || 'Ulangan Harian' })}>Ubah</Button><Button size="xs" variant="outline" color="red" onClick={() => bukaHapus(u)}>Hapus</Button></Group></Table.Td></Table.Tr>)}</Table.Tbody>
-            </Table>
-            )}
-          </>
+          ))}
+          <Group mt="sm">
+            <Button variant="outline" size="xs" onClick={() => setBaris((b) => [...b, { name: '', count: 5 }])} disabled={!kelasSiap}>
+              + Tambah topik
+            </Button>
+            <Button type="submit" loading={loading} disabled={!kelasSiap}>
+              {loading ? 'Membuat soal…' : 'Generate'}
+            </Button>
+          </Group>
+        </form>
+
+        {errors.length > 0 && (
+          <Alert color="orange" mt="md" title="Sebagian topik gagal dibuat">
+            <ul style={{ margin: 0, paddingLeft: 18 }}>
+              {errors.map((e, i) => <li key={i}><b>{e.topik}</b>: {e.pesan}</li>)}
+            </ul>
+          </Alert>
         )}
       </Paper>
+
+      <Paper withBorder shadow="xs" p="md" mb="md">
+        <Title order={3} mb="xs">Daftar ujian</Title>
+        {ujian.length === 0 ? <Kosong teks="Belum ada ujian. Buat di atas." /> : (
+          <Table.ScrollContainer minWidth={760}>
+          <Table striped highlightOnHover>
+            <Table.Thead>
+              <Table.Tr>
+                <Table.Th>Judul</Table.Th><Table.Th>Mapel</Table.Th><Table.Th>Kelas</Table.Th>
+                <Table.Th>Soal</Table.Th><Table.Th>Disetujui</Table.Th><Table.Th></Table.Th>
+              </Table.Tr>
+            </Table.Thead>
+            <Table.Tbody>
+              {ujian.map((u) => (
+                <Table.Tr key={u.id} style={aktif?.id === u.id ? { background: 'var(--mantine-color-teal-0)' } : null}>
+                  <Table.Td>{u.title}</Table.Td>
+                  <Table.Td>{u.mapel || '-'}</Table.Td>
+                  <Table.Td>{u.kelas || '-'}</Table.Td>
+                  <Table.Td>{u.n_soal}</Table.Td>
+                  <Table.Td>{u.n_setuju}</Table.Td>
+                  <Table.Td>
+                    <Group gap={6} wrap="wrap">
+                      <Button size="xs" onClick={() => bukaUjian(u)}>Buka</Button>
+                      <Button size="xs" variant="outline" onClick={() => cetak(u, false)} disabled={!u.n_setuju}>Cetak soal</Button>
+                      <Button size="xs" variant="outline" onClick={() => cetak(u, true)} disabled={!u.n_setuju}>Kunci</Button>
+                      <Button size="xs" variant="outline" color="red" onClick={() => setHapus(u)}>Hapus</Button>
+                    </Group>
+                  </Table.Td>
+                </Table.Tr>
+              ))}
+            </Table.Tbody>
+          </Table>
+          </Table.ScrollContainer>
+        )}
+      </Paper>
+
       {aktif && (
         <Paper withBorder shadow="xs" p="md">
-          <Title order={3} mb="xs">Tempel soal ke: {aktif.title} <Badge color="teal">{dipilih.length} dipilih</Badge></Title>
-          {bank.length === 0 ? <Kosong teks="Bank soal kosong. Buat dulu di halaman Bank Soal." /> : (
-          <>
-            <Group grow align="flex-end" mb="sm">
-              <Select label="Saring materi" data={[{ value: 'semua', label: 'Semua materi' }, ...OPSI_MATERI]} value={materi} onChange={(v) => setMateri(v || 'semua')} allowDeselect={false} />
-              <Select label="Saring jenis soal" data={[{ value: 'SEMUA', label: 'Semua jenis' }, { value: 'PG', label: 'Pilihan ganda' }, { value: 'ISIAN', label: 'Isian singkat' }, { value: 'URAIAN', label: 'Uraian' }]} value={tipe} onChange={(v) => setTipe(v || 'SEMUA')} allowDeselect={false} />
-              <TextInput label="Cari kata di soal" placeholder="cth: pecahan" value={cari} onChange={(e) => setCari(e.target.value)} />
+          <Group justify="space-between" align="center" mb="xs">
+            <Title order={3}>{aktif.title}</Title>
+            <Group gap="xs">
+              <Badge color="teal">{jumlahSetuju} dari {items.length} disetujui</Badge>
+              <Button size="xs" onClick={setujuiSemua} loading={loading} disabled={!items.length || jumlahSetuju === items.length}>
+                Setuju semua
+              </Button>
             </Group>
-            {tampil.length === 0 ? <Text size="sm" c="dimmed" mb="sm">Tidak ada soal yang cocok dengan saringan itu.</Text> : (
-            <Table layout="fixed" striped highlightOnHover>
-              <Table.Thead>
-                <Table.Tr>
-                  <Table.Th w={44}><Checkbox checked={semuaTampil} indeterminate={!semuaTampil && tampil.some((q) => dipilih.includes(q.id))} onChange={centangSemua} aria-label="Pilih semua yang tampil" /></Table.Th>
-                  <Table.Th w={110}>Jenis</Table.Th><Table.Th>Soal</Table.Th><Table.Th w={180}>Kunci</Table.Th>
-                </Table.Tr>
-              </Table.Thead>
-              <Table.Tbody>{kelompok.map((g) => (
-                <Fragment key={g.label}>
-                  <Table.Tr bg="var(--mantine-color-teal-0)">
-                    <Table.Td colSpan={4}><Text size="xs" fw={700}>{g.label} · {g.items.length} soal</Text></Table.Td>
-                  </Table.Tr>
-                  {g.items.map((q) => <Table.Tr key={q.id}><Table.Td><Checkbox checked={dipilih.includes(q.id)} onChange={() => centang(q.id)} aria-label="Pilih soal" /></Table.Td><Table.Td>{q.qtype}</Table.Td><Table.Td>{q.text}</Table.Td><Table.Td>{q.answer_key}</Table.Td></Table.Tr>)}
-                </Fragment>
-              ))}</Table.Tbody>
-            </Table>
-            )}
-            <Text size="sm" c="dimmed" mt="xs">
-              Menampilkan {tampil.length} dari {bank.length} soal{adaLagi ? ' (masih ada soal lama yang belum dimuat).' : '.'}{' '}
-              {tersembunyi > 0 && <Text span c="orange">Ada {tersembunyi} soal terpilih yang tidak tampil karena saringan — "Simpan pilihan" tetap menyimpannya.</Text>}
-            </Text>
-            {adaLagi && <Button variant="outline" mt="xs" onClick={() => muatBank(bank[bank.length - 1].id)} loading={loading}>Muat 200 soal sebelumnya</Button>}
-          </>
-          )}
-          <Group mt="sm">
-            <Button onClick={simpan} loading={loading}>Simpan pilihan</Button>
-            <Button variant="outline" onClick={() => setDipilih([])} disabled={!dipilih.length}>Kosongkan pilihan</Button>
           </Group>
+          <Text size="sm" c="dimmed" mb="sm">
+            Hanya soal yang disetujui yang dihitung dan dicetak. Ubah teks/kunci lewat tombol Ubah.
+          </Text>
+          {items.length === 0 ? <Kosong teks="Ujian ini belum punya soal." /> : items.map((it) => (
+            <Paper key={it.id} withBorder p="sm" mb="xs">
+              <Group justify="space-between" gap="xs" mb={6} wrap="wrap">
+                <Group gap="xs">
+                  <Badge variant="light" color="gray">No {it.nomor}</Badge>
+                  <Text size="sm" c="dimmed">{NAMA_JENIS[it.qtype] || it.qtype}</Text>
+                </Group>
+                <Badge color={it.approved ? 'teal' : 'gray'} variant="light">
+                  {it.approved ? 'Disetujui' : 'Belum'}
+                </Badge>
+              </Group>
+              <Text size="sm" mb={4}>{it.text}</Text>
+              {it.qtype === 'PG' && (it.options || []).length > 0 && (
+                <Text size="xs" c="dimmed" mb={4}>{(it.options || []).join(' · ')}</Text>
+              )}
+              <Text size="sm" mb="xs"><b>Kunci:</b> {it.answer_key}</Text>
+              <Group gap={6} wrap="wrap">
+                <Button size="xs" variant={it.approved ? 'subtle' : 'filled'} onClick={() => setujui(it)}>
+                  {it.approved ? 'Batalkan' : 'Setuju'}
+                </Button>
+                <Button size="xs" variant="outline" onClick={() => setUbah({ ...it, opsiTeks: (it.options || []).join('\n') })}>Ubah</Button>
+                <Button size="xs" variant="outline" color="red" onClick={() => hapusItem(it)}>Hapus</Button>
+              </Group>
+            </Paper>
+          ))}
         </Paper>
       )}
-      {bukaBuat && (
-        <Modal judul="Tambah ujian" tutup={() => setBukaBuat(false)}>
-          <form onSubmit={buat}>
-            {msgBuat && <Alert color="orange" mb="sm">{msgBuat}</Alert>}
-            <TextInput label="Judul ujian" placeholder="cth: Ulangan Bab 1" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} mb="sm" data-autofocus />
-            <Select label="Jenis ujian" data={JENIS_UJIAN} value={form.exam_type} onChange={(v) => setForm({ ...form, exam_type: v || 'Ulangan Harian' })} allowDeselect={false} mb="sm" />
-            <Select label="Kelas" placeholder={kelas.length ? '— pilih kelas —' : 'belum ada kelas'} data={kelas.map((k) => ({ value: String(k.id), label: `${k.name} (${k.academic_year})` }))} value={form.class_id} onChange={(v) => setForm({ ...form, class_id: v || '' })} allowDeselect={false} mb="md" />
-            <Button type="submit" fullWidth loading={loading} disabled={!form.title.trim()} mb="sm">+ Ujian</Button>
-            <Button variant="outline" fullWidth onClick={() => setBukaBuat(false)}>Batal</Button>
+
+      {ubah && (
+        <Modal judul={`Ubah soal ${NAMA_JENIS[ubah.qtype] || ''}`} tutup={() => setUbah(null)}>
+          <form onSubmit={simpanUbah}>
+            <Textarea label="Soal" autosize minRows={3} value={ubah.text} onChange={(e) => setUbah({ ...ubah, text: e.target.value })} mb="sm" />
+            {ubah.qtype === 'PG' ? (
+              <>
+                <Textarea label="Pilihan jawaban (satu per baris)" autosize minRows={4} value={ubah.opsiTeks} onChange={(e) => setUbah({ ...ubah, opsiTeks: e.target.value })} mb="sm" />
+                <Select label="Kunci jawaban" data={hurufOpsi} value={ubah.answer_key} onChange={(v) => setUbah({ ...ubah, answer_key: v || '' })} allowDeselect={false} mb="sm" />
+              </>
+            ) : (
+              <TextInput label="Kunci jawaban" value={ubah.answer_key} onChange={(e) => setUbah({ ...ubah, answer_key: e.target.value })} mb="sm" />
+            )}
+            {ubah.qtype === 'URAIAN' && (
+              <Textarea label="Rubrik penilaian (opsional)" autosize minRows={2} value={ubah.rubric || ''} onChange={(e) => setUbah({ ...ubah, rubric: e.target.value })} mb="sm" />
+            )}
+            <Button type="submit" fullWidth loading={loading}>Simpan</Button>
           </form>
         </Modal>
       )}
-      {ubahUjian && (
-        <Modal judul="Ubah ujian" tutup={() => setUbahUjian(null)}>
-          <form onSubmit={simpanJudul}>
-            <TextInput label="Judul ujian" value={ubahUjian.title} onChange={(e) => setUbahUjian({ ...ubahUjian, title: e.target.value })} mb="sm" autoFocus />
-            <Select label="Jenis ujian" data={JENIS_UJIAN} value={ubahUjian.exam_type} onChange={(v) => setUbahUjian({ ...ubahUjian, exam_type: v || 'Ulangan Harian' })} allowDeselect={false} mb="md" />
-            <Button type="submit" fullWidth loading={loading} disabled={!ubahUjian.title.trim()}>Simpan</Button>
-          </form>
-        </Modal>
-      )}
-      {hapusUjian && (
-        <Modal judul="Hapus ujian?" tutup={() => setHapusUjian(null)}>
-          <p>Yakin hapus ujian <b>{hapusUjian.title}</b>?</p>
+
+      {hapus && (
+        <Modal judul="Hapus ujian?" tutup={() => setHapus(null)}>
+          <p>Yakin hapus ujian <b>{hapus.title}</b>?</p>
           <p style={{ color: '#64748b' }}>
-            {hapusUjian.lembar > 0 ? `${hapusUjian.lembar} lembar cetak` : 'Belum ada lembar cetak'}
-            {hapusUjian.nilai > 0 ? ` dan ${hapusUjian.nilai} nilai siswa` : ''} ikut terhapus dan tidak bisa dikembalikan. Soal di bank tetap aman.
+            Soal tetap tersimpan di bank. Berkas cetak yang pernah dibuat ikut terhapus.
           </p>
-          <Button color="red" fullWidth loading={loading} onClick={jalankanHapusUjian} mb="sm">Ya, hapus</Button>
-          <Button variant="outline" fullWidth onClick={() => setHapusUjian(null)}>Batal</Button>
+          <Button color="red" fullWidth loading={loading} onClick={jalankanHapus} mb="sm">Ya, hapus</Button>
+          <Button variant="outline" fullWidth onClick={() => setHapus(null)}>Batal</Button>
         </Modal>
       )}
     </div>

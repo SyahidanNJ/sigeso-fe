@@ -77,6 +77,7 @@ export default function Materi({ subBab }) {
       <Title order={3} mb="xs">Sumber materi — {subBab.nama}</Title>
       {msg && <Alert color="orange" mb="sm">{msg}</Alert>}
       {sumber.length === 0 ? <Kosong teks="Belum ada materi di subbab ini. Unggah berkas atau tempel link di bawah." /> : (
+        <Table.ScrollContainer minWidth={560}>
         <Table striped highlightOnHover mb="sm">
           <Table.Thead><Table.Tr><Table.Th w={90}>Jenis</Table.Th><Table.Th>Sumber</Table.Th><Table.Th w={160}>Status</Table.Th><Table.Th w={160}>Aksi</Table.Th></Table.Tr></Table.Thead>
           <Table.Tbody>{sumber.map((s) => (
@@ -88,7 +89,7 @@ export default function Materi({ subBab }) {
                 {s.status === 'failed' && s.error && <Text size="xs" c="red">{s.error}</Text>}
               </Table.Td>
               <Table.Td>
-                <Group gap={6} wrap="nowrap">
+                <Group gap={6} wrap="wrap">
                   <Button size="compact-xs" variant="outline" onClick={() => buka(s)}>{s.kind === 'url' ? 'Buka' : 'Unduh'}</Button>
                   <Button size="compact-xs" variant="outline" color="red" onClick={() => setHapus(s)}>Hapus</Button>
                 </Group>
@@ -96,6 +97,7 @@ export default function Materi({ subBab }) {
             </Table.Tr>
           ))}</Table.Tbody>
         </Table>
+        </Table.ScrollContainer>
       )}
       <Group align="flex-end">
         <FileInput label="Berkas materi (PDF, DOCX, atau TXT)" accept=".pdf,.docx,.txt" value={file} onChange={setFile} style={{ flex: 1 }} />

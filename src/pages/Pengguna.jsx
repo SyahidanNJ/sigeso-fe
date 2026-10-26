@@ -65,6 +65,7 @@ export default function Pengguna() {
           <Button onClick={() => setBaru({ ...awalBaru })}>Tambah Pengguna</Button>
         </Group>
         {daftar.length === 0 ? <Kosong teks="Belum ada pengguna lain di sekolah ini." /> : (
+          <Table.ScrollContainer minWidth={720}>
           <Table striped highlightOnHover>
             <Table.Thead><Table.Tr><Table.Th>No</Table.Th><Table.Th>Nama</Table.Th><Table.Th>Email</Table.Th><Table.Th>Peran</Table.Th><Table.Th>Status</Table.Th><Table.Th style={{ textAlign: 'right' }}>Aksi</Table.Th></Table.Tr></Table.Thead>
             <Table.Tbody>{daftar.map((u, i) => (
@@ -84,7 +85,8 @@ export default function Pengguna() {
                 </Table.Td>
               </Table.Tr>
             ))}</Table.Tbody>
-          </Table>
+            </Table>
+          </Table.ScrollContainer>
         )}
       </Paper>
 
