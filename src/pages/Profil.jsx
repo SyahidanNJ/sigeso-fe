@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Alert, Button, Group, Modal, Paper, PasswordInput, Select, Text, TextInput, Title } from '@mantine/core';
+import { Alert, Button, Grid, Group, Modal, Paper, PasswordInput, Select, Text, TextInput, Title } from '@mantine/core';
 import api from '../lib/api';
 import { JENJANG, opsiKelas, TAHUN_AJARAN, TAHUN_AJARAN_KINI } from '../lib/jenjang';
 
@@ -128,7 +128,10 @@ export default function Profil() {
   return (
     <div>
       <Title order={2} mb="sm">Profil</Title>
-      <Paper withBorder shadow="xs" p="md" mb="md" maw={560}>
+      {/* Dua kolom di layar lebar: data akun & kelas di kiri, kata sandi di kanan. */}
+      <Grid gutter="md">
+      <Grid.Col span={{ base: 12, md: 6 }}>
+      <Paper withBorder shadow="xs" p="md" mb="md">
         <Title order={3} mb="sm">Akun</Title>
         <Group justify="space-between" wrap="nowrap" mb={6}>
           <Text size="sm"><span style={LABEL}>Nama</span>{user?.name || '-'}</Text>
@@ -139,7 +142,7 @@ export default function Profil() {
         {baris('Sekolah', user?.school)}
       </Paper>
 
-      <Paper withBorder shadow="xs" p="md" mb="md" maw={560}>
+      <Paper withBorder shadow="xs" p="md" mb="md">
         <Title order={3} mb="sm">Kelas saya</Title>
         <Text size="sm" mb="sm" c="dimmed">
           {user?.class_name
@@ -180,8 +183,10 @@ export default function Profil() {
           </Group>
         </form>
       </Paper>
+      </Grid.Col>
 
-      <Paper withBorder shadow="xs" p="md" mb="md" maw={560}>
+      <Grid.Col span={{ base: 12, md: 6 }}>
+      <Paper withBorder shadow="xs" p="md" mb="md">
         <Title order={3} mb="xs">Ganti kata sandi</Title>
         {msg && <Alert color="orange" mb="sm">{msg}</Alert>}
         <form onSubmit={simpanSandi}>
@@ -191,6 +196,8 @@ export default function Profil() {
           <Button type="submit" mt="md" loading={loading} disabled={!gantiSandi}>Simpan</Button>
         </form>
       </Paper>
+      </Grid.Col>
+      </Grid>
 
       <Modal opened={bukaNama} onClose={() => setBukaNama(false)} title="Ubah nama" centered>
         <form onSubmit={simpanNamaBaru}>
