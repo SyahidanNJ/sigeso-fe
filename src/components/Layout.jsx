@@ -20,16 +20,15 @@ const LEBAR_NAVBAR = 230;
 
 // Bergantian di header; panjangnya dijaga seragam agar tata letak tak bergeser.
 const KATA = [
-  'Buat soal ujian semakin mudah',
-  'Dari materi langsung jadi soal',
-  'Satu lembar soal, fotokopi sendiri',
+  'Soal siap pakai dari materi Anda',
   'Setujui soal, cetak, selesai',
+  'Cukup pilih topik, soal langsung jadi',
 ];
 
 export default function Layout() {
   const nav = useNavigate();
   const lok = useLocation();
-  const [buka, { toggle }] = useDisclosure();
+  const [buka, { toggle, close }] = useDisclosure();
   const [lanjut, setLanjut] = useState(() => LANJUTAN.some((m) => m.ke === lok.pathname));
   const [user, setUser] = useState(() => {
     try { return JSON.parse(localStorage.getItem('sigeso_user')) || null; } catch { return null; }
@@ -55,6 +54,12 @@ export default function Layout() {
     return () => window.removeEventListener('sigeso:user', muat);
   }, []);
 
+  // Di ponsel navbar tampil sebagai overlay; tutup tiap kali pindah halaman.
+  function pergi(ke) {
+    nav(ke);
+    close();
+  }
+
   function keluar() {
     localStorage.removeItem('sigeso_token');
     localStorage.removeItem('sigeso_user');
@@ -76,9 +81,21 @@ export default function Layout() {
           <Group gap="sm" wrap="nowrap">
             <Burger opened={buka} onClick={toggle} hiddenFrom="sm" size="sm" />
             {/* Area logo dibuat selebar navbar (dikurangi padding header + jarak
-                antar item) supaya garis pemisah tagline sejajar tepi navbar. */}
+                antar item) supaya garis pemisah tagline sejajar tepi navbar.
+                Nama ditulis sebagai teks, bukan bagian gambar, agar bisa dibuat
+                lebih besar dari ukuran yang muat di dalam SVG logo. */}
             <Box w={{ base: 'auto', md: LEBAR_NAVBAR - 16 - 8 }} style={{ display: 'flex', alignItems: 'center' }}>
-              <img src="/sigeso-logo.svg" alt="Sigeso" height={40} style={{ cursor: 'pointer' }} onClick={() => nav('/')} />
+              <UnstyledButton onClick={() => pergi('/')} aria-label="Sigeso — beranda">
+                <Group gap={10} wrap="nowrap" align="center">
+                  <img src="/sigeso-mark.svg" alt="" width={44} height={44} />
+                  <div>
+                    <Text fw={800} fz={21} lh={1} lts={0.8} c="var(--sisi)">SIGESO</Text>
+                    <Text fz={9} lh={1} lts={1.4} mt={4} style={{ whiteSpace: 'nowrap', color: '#64748b' }}>
+                      SISTEM GENERATOR SOAL
+                    </Text>
+                  </div>
+                </Group>
+              </UnstyledButton>
             </Box>
             <Text
               key={kata}
@@ -99,7 +116,7 @@ export default function Layout() {
                   <div style={{ minWidth: 0 }}>
                     <Text size="sm" fw={600} lh={1.2} truncate maw={{ base: 110, sm: 220 }}>{nama}</Text>
                     <Text size="xs" c="dimmed" lh={1.2} truncate maw={{ base: 110, sm: 220 }}>
-                      {user?.class_name || peran}
+                      {peran}
                     </Text>
                   </div>
                 </Group>
@@ -107,8 +124,8 @@ export default function Layout() {
             </Menu.Target>
             <Menu.Dropdown>
               <Menu.Label>{nama} — {peran}</Menu.Label>
-              <Menu.Item onClick={() => nav('/profil')}>Profil</Menu.Item>
-              {admin && <Menu.Item onClick={() => nav('/pengguna')}>Pengguna</Menu.Item>}
+              <Menu.Item onClick={() => pergi('/profil')}>Profil</Menu.Item>
+              {admin && <Menu.Item onClick={() => pergi('/pengguna')}>Pengguna</Menu.Item>}
               <Menu.Divider />
               <Menu.Item color="red" onClick={keluar}>Keluar</Menu.Item>
             </Menu.Dropdown>
@@ -117,7 +134,7 @@ export default function Layout() {
       </AppShell.Header>
       <AppShell.Navbar p="md">
         {MENU.map((m) => (
-          <NavLink key={m.ke} label={m.label} active={lok.pathname === m.ke} onClick={() => nav(m.ke)} />
+          <NavLink key={m.ke} label={m.label} active={lok.pathname === m.ke} onClick={() => pergi(m.ke)} />
         ))}
         <NavLink
           label="Advanced"
@@ -135,7 +152,7 @@ export default function Layout() {
         />
         <Collapse in={lanjut}>
           {LANJUTAN.map((m) => (
-            <NavLink key={m.ke} label={m.label} pl="lg" active={lok.pathname === m.ke} onClick={() => nav(m.ke)} />
+            <NavLink key={m.ke} label={m.label} pl="lg" active={lok.pathname === m.ke} onClick={() => pergi(m.ke)} />
           ))}
         </Collapse>
       </AppShell.Navbar>
