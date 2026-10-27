@@ -7,25 +7,20 @@ import Modal from './Modal';
 const JENIS = {
   mapel: { label: 'Mapel', basis: '/subjects' },
   topik: { label: 'Topik', basis: '/topics' },
-  bab: { label: 'Bab', basis: '/chapters' },
-  subbab: { label: 'Subbab', basis: '/subchapters' },
 };
-const KUNCI = { mapel: 'subject_id', topik: 'topic_id', bab: 'chapter_id', subbab: 'sub_chapter_id' };
+const KUNCI = { mapel: 'subject_id', topik: 'topic_id' };
 
-// Pemilih bertingkat: Tingkat -> Mapel -> Topik -> Bab -> Subbab. Mapel dimuat
-// per tingkat karena Matematika kelas 4 dan kelas 5 adalah baris berbeda.
-export default function PemilihSubbab({ awal, onPilih }) {
+// Pemilih bertingkat: Tingkat -> Mapel -> Topik. Mapel dimuat per tingkat karena
+// Matematika kelas 4 dan kelas 5 adalah baris berbeda. Topik yang terpilih jadi
+// tempat menempelnya materi dan penyaring daftar soal di bawahnya.
+export default function PemilihTopik({ awal, onPilih }) {
   const [kelas, setKelas] = useState([]);
   const [mapel, setMapel] = useState([]);
   const [topik, setTopik] = useState([]);
-  const [bab, setBab] = useState([]);
-  const [sub, setSub] = useState([]);
   const [pilih, setPilih] = useState(() => (awal ? {
     grade_level: String(awal.grade_level),
     subject_id: String(awal.subject_id),
     topic_id: String(awal.topic_id),
-    chapter_id: String(awal.chapter_id),
-    sub_chapter_id: String(awal.id),
   } : {}));
   const [nama, setNama] = useState('');
   const [mBaris, setMBaris] = useState(null);
@@ -37,13 +32,11 @@ export default function PemilihSubbab({ awal, onPilih }) {
   useEffect(() => {
     ambil('/classes').then(setKelas).catch(() => { /* pesan sudah muncul dari api.js */ });
     if (!awal) return;
-    // Muat rantai yang tersimpan supaya kelima pilihan tampil seperti terakhir dipakai.
+    // Muat rantai yang tersimpan supaya pilihan tampil seperti terakhir dipakai.
     (async () => {
       try {
         setMapel(await ambil('/subjects', { grade_level: awal.grade_level }));
         setTopik(await ambil('/topics', { subject_id: awal.subject_id }));
-        setBab(await ambil('/chapters', { topic_id: awal.topic_id }));
-        setSub(await ambil('/subchapters', { chapter_id: awal.chapter_id }));
       } catch { /* pesan sudah muncul dari api.js */ }
     })();
   }, []);
@@ -56,66 +49,39 @@ export default function PemilihSubbab({ awal, onPilih }) {
     if (!subjectId) { setTopik([]); return; }
     try { setTopik(await ambil('/topics', { subject_id: subjectId })); } catch { /* pesan sudah muncul dari api.js */ }
   }
-  async function muatBab(topicId) {
-    if (!topicId) { setBab([]); return; }
-    try { setBab(await ambil('/chapters', { topic_id: topicId })); } catch { /* pesan sudah muncul dari api.js */ }
-  }
-  async function muatSub(chapterId) {
-    if (!chapterId) { setSub([]); return; }
-    try { setSub(await ambil('/subchapters', { chapter_id: chapterId })); } catch { /* pesan sudah muncul dari api.js */ }
-  }
 
-  const muatUlang = (jenis) => (
-    jenis === 'mapel' ? muatMapel(pilih.grade_level)
-      : jenis === 'topik' ? muatTopik(pilih.subject_id)
-        : jenis === 'bab' ? muatBab(pilih.topic_id)
-          : muatSub(pilih.chapter_id)
-  );
+  const muatUlang = (jenis) => (jenis === 'mapel' ? muatMapel(pilih.grade_level) : muatTopik(pilih.subject_id));
 
-  // Memilih satu baris membuang pilihan baris di bawahnya; subbab yang dibuang
-  // juga harus dilepas dari halaman di bawah (materi & daftar soal).
+  // Memilih satu baris membuang pilihan di bawahnya; topik yang dibuang juga
+  // dilepas dari halaman di bawah (materi & daftar soal).
   function pilihNilai(jenis, v) {
     if (jenis === 'tingkat') {
-      setPilih((p) => ({ ...p, grade_level: v, subject_id: null, topic_id: null, chapter_id: null, sub_chapter_id: null }));
-      setTopik([]); setBab([]); setSub([]);
+      setPilih({ grade_level: v });
+      setTopik([]);
       onPilih?.(null);
       muatMapel(v);
     } else if (jenis === 'mapel') {
-      setPilih((p) => ({ ...p, subject_id: v, topic_id: null, chapter_id: null, sub_chapter_id: null }));
-      setBab([]); setSub([]);
+      setPilih((p) => ({ ...p, subject_id: v, topic_id: null }));
       onPilih?.(null);
       muatTopik(v);
-    } else if (jenis === 'topik') {
-      setPilih((p) => ({ ...p, topic_id: v, chapter_id: null, sub_chapter_id: null }));
-      setSub([]);
-      onPilih?.(null);
-      muatBab(v);
-    } else if (jenis === 'bab') {
-      setPilih((p) => ({ ...p, chapter_id: v, sub_chapter_id: null }));
-      onPilih?.(null);
-      muatSub(v);
     } else {
-      setPilih((p) => ({ ...p, sub_chapter_id: v }));
-      const s = sub.find((x) => String(x.id) === String(v));
-      if (s) {
+      setPilih((p) => ({ ...p, topic_id: v }));
+      const t = topik.find((x) => String(x.id) === String(v));
+      if (t) {
         onPilih?.({
-          id: s.id,
-          nama: s.name,
-          grade_level: Number(pilih.grade_level),
+          id: t.id,
+          nama: t.name,
+          topic_id: t.id,
           subject_id: Number(pilih.subject_id),
-          topic_id: Number(pilih.topic_id),
-          chapter_id: Number(pilih.chapter_id),
+          grade_level: Number(pilih.grade_level),
         });
       }
     }
   }
 
-  const isiPayload = (jenis, namaBaru) => {
-    if (jenis === 'mapel') return { name: namaBaru, grade_level: Number(pilih.grade_level) };
-    if (jenis === 'topik') return { subject_id: Number(pilih.subject_id), name: namaBaru };
-    if (jenis === 'bab') return { topic_id: Number(pilih.topic_id), name: namaBaru };
-    return { chapter_id: Number(pilih.chapter_id), name: namaBaru };
-  };
+  const isiPayload = (jenis, namaBaru) => (jenis === 'mapel'
+    ? { name: namaBaru, grade_level: Number(pilih.grade_level) }
+    : { subject_id: Number(pilih.subject_id), name: namaBaru });
 
   async function simpanBaris(e) {
     e.preventDefault();
@@ -134,11 +100,9 @@ export default function PemilihSubbab({ awal, onPilih }) {
     const kunci = KUNCI[jenis];
     if (String(pilih[kunci]) !== String(id)) return;
     onPilih?.(null);
-    if (kunci === 'sub_chapter_id') { setPilih((p) => ({ ...p, sub_chapter_id: null })); return; }
-    if (kunci === 'chapter_id') { setPilih((p) => ({ ...p, chapter_id: null, sub_chapter_id: null })); setSub([]); return; }
-    if (kunci === 'topic_id') { setPilih((p) => ({ ...p, topic_id: null, chapter_id: null, sub_chapter_id: null })); setBab([]); setSub([]); return; }
-    setPilih((p) => ({ ...p, subject_id: null, topic_id: null, chapter_id: null, sub_chapter_id: null }));
-    setTopik([]); setBab([]); setSub([]);
+    if (kunci === 'topic_id') { setPilih((p) => ({ ...p, topic_id: null })); return; }
+    setPilih((p) => ({ ...p, subject_id: null, topic_id: null }));
+    setTopik([]);
   }
 
   async function jalankanHapus() {
@@ -152,10 +116,10 @@ export default function PemilihSubbab({ awal, onPilih }) {
     } catch { /* pesan sudah muncul dari api.js */ } finally { setLoading(false); }
   }
 
-  // Kosongkan seluruh pilihan supaya daftar soal kembali menampilkan semua subbab.
+  // Kosongkan seluruh pilihan supaya daftar soal kembali menampilkan semua topik.
   function reset() {
     setPilih({});
-    setTopik([]); setBab([]); setSub([]);
+    setTopik([]);
     onPilih?.(null);
   }
 
@@ -164,8 +128,6 @@ export default function PemilihSubbab({ awal, onPilih }) {
     pilih.grade_level ? `Kelas ${pilih.grade_level}` : null,
     cariNama(mapel, pilih.subject_id),
     cariNama(topik, pilih.topic_id),
-    cariNama(bab, pilih.chapter_id),
-    cariNama(sub, pilih.sub_chapter_id),
   ].filter(Boolean).join('  ›  ');
 
   // Tingkat hanya memuat kelas yang sudah dibuat di Profil atau Sekolah.
@@ -182,13 +144,11 @@ export default function PemilihSubbab({ awal, onPilih }) {
     { jenis: 'tingkat', kunci: 'grade_level', label: 'Tingkat', siap: TINGKAT.length > 0, opsi: TINGKAT, petunjuk: TINGKAT.length ? undefined : 'belum ada kelas — buat di halaman Profil' },
     { jenis: 'mapel', kunci: 'subject_id', label: 'Mapel', siap: !!pilih.grade_level, opsi: mapel.map((m) => ({ value: String(m.id), label: m.name })) },
     { jenis: 'topik', kunci: 'topic_id', label: 'Topik', siap: !!pilih.subject_id, opsi: topik.map((t) => ({ value: String(t.id), label: t.name })) },
-    { jenis: 'bab', kunci: 'chapter_id', label: 'Bab', siap: !!pilih.topic_id, opsi: bab.map((b) => ({ value: String(b.id), label: b.name })) },
-    { jenis: 'subbab', kunci: 'sub_chapter_id', label: 'Subbab', siap: !!pilih.chapter_id, opsi: sub.map((s) => ({ value: String(s.id), label: s.name })) },
   ];
 
   return (
     <Paper withBorder shadow="xs" p="sm" mb="md" className="pemilih" style={{ background: 'var(--kartu)' }}>
-      <SimpleGrid cols={{ base: 1, sm: 2, lg: 5 }} spacing="xs" verticalSpacing="xs">
+      <SimpleGrid cols={{ base: 1, sm: 3 }} spacing="xs" verticalSpacing="xs">
         {BARIS.map((b) => {
           const nilai = pilih[b.kunci] ? String(pilih[b.kunci]) : null;
           const terpilih = b.opsi.flatMap((o) => (o.items ? o.items : [o])).find((o) => o.value === nilai);
@@ -240,7 +200,7 @@ export default function PemilihSubbab({ awal, onPilih }) {
       {hapus && (
         <Modal judul="Hapus?" tutup={() => setHapus(null)}>
           <p>Yakin hapus {JENIS[hapus.jenis].label.toLowerCase()} <b>{hapus.nama}</b>? Semua isi di bawahnya ikut terhapus.</p>
-          {hapus.jenis !== 'subbab' && <p style={{ color: '#64748b' }}>Kalau sudah ada soal atau materi yang memakainya, penghapusan akan ditolak.</p>}
+          <p style={{ color: '#64748b' }}>Kalau sudah ada soal atau materi yang memakainya, penghapusan akan ditolak.</p>
           <Button color="red" fullWidth loading={loading} onClick={jalankanHapus} mb="sm">Ya, hapus</Button>
           <Button variant="outline" fullWidth onClick={() => setHapus(null)}>Batal</Button>
         </Modal>

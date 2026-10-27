@@ -6,8 +6,8 @@ import Modal from '../components/Modal';
 
 const STATUS = { done: 'Siap dipakai', pending: 'Sedang dibaca', failed: 'Gagal dibaca' };
 
-// Sumber materi untuk subbab yang dipilih di bar atas (PemilihSubbab).
-export default function Materi({ subBab }) {
+// Sumber materi untuk topik yang dipilih di bar atas (PemilihTopik).
+export default function Materi({ topik }) {
   const [sumber, setSumber] = useState([]);
   const [url, setUrl] = useState('');
   const [file, setFile] = useState(null);
@@ -16,13 +16,13 @@ export default function Materi({ subBab }) {
   const [hapus, setHapus] = useState(null);
 
   async function muatSumber() {
-    if (!subBab) { setSumber([]); return; }
+    if (!topik) { setSumber([]); return; }
     try {
-      const r = await api.get('/sources', { params: { sub_chapter_id: subBab.id } });
+      const r = await api.get('/sources', { params: { topic_id: topik.id } });
       setSumber(r.data.data);
     } catch { /* pesan sudah muncul dari api.js */ }
   }
-  useEffect(() => { muatSumber(); }, [subBab?.id]);
+  useEffect(() => { muatSumber(); }, [topik?.id]);
 
   async function unggah() {
     if (!file) { setMsg('Pilih berkasnya dulu.'); return; }
@@ -31,7 +31,7 @@ export default function Materi({ subBab }) {
     try {
       const fd = new FormData();
       fd.append('file', file);
-      fd.append('sub_chapter_id', subBab.id);
+      fd.append('topic_id', topik.id);
       await api.post('/sources/upload', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
       muatSumber();
     } catch { /* pesan sudah muncul dari api.js */ } finally { setLoading(false); }
@@ -42,7 +42,7 @@ export default function Materi({ subBab }) {
     setMsg('');
     setLoading(true);
     try {
-      await api.post('/sources/url', { url, sub_chapter_id: Number(subBab.id) });
+      await api.post('/sources/url', { url, topic_id: Number(topik.id) });
       setUrl('');
       muatSumber();
     } catch { /* pesan sudah muncul dari api.js */ } finally { setLoading(false); }
@@ -63,20 +63,20 @@ export default function Materi({ subBab }) {
     } catch { /* pesan sudah muncul dari api.js */ } finally { setLoading(false); }
   }
 
-  if (!subBab) {
+  if (!topik) {
     return (
       <Paper withBorder shadow="xs" p="md" mb="md">
         <Title order={3} mb="xs">Sumber materi</Title>
-        <Kosong teks="Pilih Subbab di bar atas — tempat unggah materi muncul di sini." />
+        <Kosong teks="Pilih Topik di bar atas — tempat unggah materi muncul di sini." />
       </Paper>
     );
   }
 
   return (
     <Paper withBorder shadow="xs" p="md" mb="md">
-      <Title order={3} mb="xs">Sumber materi — {subBab.nama}</Title>
+      <Title order={3} mb="xs">Sumber materi — {topik.nama}</Title>
       {msg && <Alert color="orange" mb="sm">{msg}</Alert>}
-      {sumber.length === 0 ? <Kosong teks="Belum ada materi di subbab ini. Unggah berkas atau tempel link di bawah." /> : (
+      {sumber.length === 0 ? <Kosong teks="Belum ada materi di topik ini. Unggah berkas atau tempel link di bawah." /> : (
         <Table.ScrollContainer minWidth={560}>
         <Table striped highlightOnHover mb="sm">
           <Table.Thead><Table.Tr><Table.Th w={90}>Jenis</Table.Th><Table.Th>Sumber</Table.Th><Table.Th w={160}>Status</Table.Th><Table.Th w={160}>Aksi</Table.Th></Table.Tr></Table.Thead>

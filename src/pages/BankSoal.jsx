@@ -13,7 +13,7 @@ const JENIS_SOAL = [
 const NAMA_JENIS = Object.fromEntries(JENIS_SOAL.map((j) => [j.qtype, j.label]));
 const BATAS = 200; // samakan dengan LIMIT di listQuestions
 
-export default function BankSoal({ subBab }) {
+export default function BankSoal({ topik }) {
   const [daftar, setDaftar] = useState([]);
   const [adaLagi, setAdaLagi] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -23,20 +23,20 @@ export default function BankSoal({ subBab }) {
   // Mantine 8 mengembalikan [nilai, cancel]; hanya nilainya yang dipakai.
   const [kata] = useDebouncedValue(cari.trim(), 300);
 
-  // Kata cari lama dibuang saat subbab berganti agar daftar baru tak tampak kosong.
-  useEffect(() => { setCari(''); }, [subBab?.id]);
+  // Kata cari lama dibuang saat topik berganti agar daftar baru tak tampak kosong.
+  useEffect(() => { setCari(''); }, [topik?.id]);
 
-  // Daftar hanya berisi soal subbab terpilih, supaya tak tercampur mapel lain.
+  // Daftar hanya berisi soal topik terpilih, supaya tak tercampur mapel lain.
   // beforeId memuat halaman berikutnya ke arah soal lama lalu menyambungnya.
   async function muat(beforeId) {
     try {
-      const params = { ...(subBab ? { sub_chapter_id: subBab.id } : {}), ...(kata ? { q: kata } : {}), ...(beforeId ? { before_id: beforeId } : {}) };
+      const params = { ...(topik ? { topic_id: topik.id } : {}), ...(kata ? { q: kata } : {}), ...(beforeId ? { before_id: beforeId } : {}) };
       const r = await api.get('/questions', Object.keys(params).length ? { params } : undefined);
       setDaftar((d) => (beforeId ? [...d, ...r.data.data] : r.data.data));
       setAdaLagi(r.data.data.length === BATAS);
     } catch { /* pesan sudah muncul dari api.js */ }
   }
-  useEffect(() => { muat(); }, [subBab?.id, kata]);
+  useEffect(() => { muat(); }, [topik?.id, kata]);
 
   async function jalankanHapus() {
     setLoading(true);
@@ -67,7 +67,7 @@ export default function BankSoal({ subBab }) {
   return (
     <div>
       <Paper withBorder shadow="xs" p="md">
-        <Title order={3} mb="xs">Bank soal{subBab ? ` — ${subBab.nama}` : ' (semua subbab)'} ({daftar.length})</Title>
+        <Title order={3} mb="xs">Daftar soal{topik ? ` — ${topik.nama}` : ' (semua topik)'} ({daftar.length})</Title>
         <TextInput
           label="Cari soal"
           placeholder="cth: pecahan senilai"
@@ -79,7 +79,7 @@ export default function BankSoal({ subBab }) {
           rightSection={cari ? <CloseButton aria-label="Bersihkan pencarian" onClick={() => setCari('')} /> : null}
           description={kata && kata !== cari.trim() ? 'Mencari…' : undefined}
         />
-        {daftar.length === 0 ? <Kosong teks={kata ? `Tidak ada soal yang memuat "${kata}".` : subBab ? 'Belum ada soal di subbab ini. Buat lewat halaman Ujian.' : 'Bank masih kosong. Pilih subbab di bar atas, atau buat soal di halaman Ujian.'} /> : JENIS_SOAL.map(({ qtype, label }) => {
+        {daftar.length === 0 ? <Kosong teks={kata ? `Tidak ada soal yang memuat "${kata}".` : topik ? 'Belum ada soal di topik ini. Buat lewat halaman Ujian.' : 'Bank masih kosong. Pilih topik di bar atas, atau buat soal di halaman Ujian.'} /> : JENIS_SOAL.map(({ qtype, label }) => {
           const isi = daftar.filter((q) => q.qtype === qtype).sort((a, b) => a.id - b.id);
           return (
             <div key={qtype}>

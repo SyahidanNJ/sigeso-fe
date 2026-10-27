@@ -1,44 +1,38 @@
 import { useState } from 'react';
-import Panduan from '../components/Panduan';
-import PemilihSubbab from '../components/PemilihSubbab';
+import { Title } from '@mantine/core';
+import PemilihTopik from '../components/PemilihTopik';
 import Materi from './Materi';
 import BankSoal from './BankSoal';
 
-const KUNCI_SUBBAB = 'sigeso_subbab';
+const KUNCI_TOPIK = 'sigeso_topik';
 
-function subBabTersimpan() {
+function topikTersimpan() {
   try {
-    const s = JSON.parse(sessionStorage.getItem(KUNCI_SUBBAB));
-    // Bentuk lama hanya {id, nama} tak bisa mengisi bar pemilih → buang sekali.
-    return s && s.grade_level && s.subject_id && s.topic_id && s.chapter_id ? s : null;
+    const s = JSON.parse(sessionStorage.getItem(KUNCI_TOPIK));
+    // Bentuk lama (subbab) tak bisa mengisi bar pemilih → buang sekali.
+    return s && s.grade_level && s.subject_id && s.topic_id ? s : null;
   } catch { return null; }
 }
 
-// Bank soal: pilih tingkat/mapel/topik/bab/subbab di bar atas, lalu kelola
-// materi dan soal subbab itu. Ujian punya halamannya sendiri.
+// Bank soal: pilih tingkat/mapel/topik di bar atas, lalu kelola materi dan soal
+// topik itu. Ujian punya halamannya sendiri.
 export default function Soal() {
-  const [subBab, setSubBab] = useState(subBabTersimpan);
+  const [topik, setTopik] = useState(topikTersimpan);
 
-  function pilihSubBab(s) {
-    setSubBab(s);
+  function pilihTopik(t) {
+    setTopik(t);
     try {
-      if (s) sessionStorage.setItem(KUNCI_SUBBAB, JSON.stringify(s));
-      else sessionStorage.removeItem(KUNCI_SUBBAB);
+      if (t) sessionStorage.setItem(KUNCI_TOPIK, JSON.stringify(t));
+      else sessionStorage.removeItem(KUNCI_TOPIK);
     } catch { /* abaikan */ }
   }
 
   return (
     <div>
-      <Panduan id="bank" steps={[
-        'Pilih Tingkat → Mapel → Topik → Bab → Subbab di bar atas. Bar itu tetap terlihat saat halaman digulir.',
-        'Tingkat dulu, karena Matematika kelas 4 dan kelas 5 adalah mapel yang berbeda.',
-        'Setelah Subbab terpilih, daftar materi muncul. Unggah berkas atau tempel link di sana.',
-        'Soal yang sudah ada bisa dicari, diubah, atau dihapus di daftar bawah.',
-        'Untuk membuat soal baru, buka halaman Ujian.',
-      ]} />
-      <PemilihSubbab awal={subBab} onPilih={pilihSubBab} />
-      <Materi subBab={subBab} />
-      <BankSoal subBab={subBab} />
+      <Title order={2} mb="sm">Bank soal</Title>
+      <PemilihTopik awal={topik} onPilih={pilihTopik} />
+      <Materi topik={topik} />
+      <BankSoal topik={topik} />
     </div>
   );
 }
