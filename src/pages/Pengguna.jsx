@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Badge, Button, Group, Paper, PasswordInput, Select, Switch, Table, TextInput, Title } from '@mantine/core';
 import api from '../lib/api';
-import Panduan from '../components/Panduan';
 import Kosong from '../components/Kosong';
 import Modal from '../components/Modal';
 
@@ -58,7 +57,6 @@ export default function Pengguna() {
 
   return (
     <div>
-      <Panduan id="pengguna" steps={['Tambah akun untuk guru yang perlu masuk ke Sigeso.', 'Beri tahu email dan kata sandi awalnya; guru bisa menggantinya sendiri di halaman Profil.', 'Nonaktifkan akun yang sudah tidak dipakai supaya tidak bisa masuk lagi.']} />
       <Paper withBorder shadow="xs" p="md">
         <Group justify="space-between" mb="sm">
           <Title order={3}>Pengguna ({daftar.length})</Title>

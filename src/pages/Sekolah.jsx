@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Avatar, Badge, Button, FileInput, Group, Image, Paper, Select, Text, Textarea, TextInput, Title } from '@mantine/core';
 import api from '../lib/api';
-import Panduan from '../components/Panduan';
 import Kosong from '../components/Kosong';
 
 const AWAL = { name: '', npsn: '', address: '' };
@@ -10,13 +9,6 @@ const MANUAL = 'Isi datanya manual saja.';
 // Logo disajikan backend tanpa token, jadi cukup dipakai sebagai <img src>.
 const URL_LOGO = `${String(import.meta.env.VITE_API_URL || '').replace(/\/$/, '')}/logos/`;
 const logoUrl = (p) => (p ? URL_LOGO + p.replace(/^logo\//, '') : null);
-
-const PANDUAN = [
-  'Ketik nama sekolah atau NPSN di kotak pencarian, lalu pilih sekolah Anda dari daftar.',
-  'Kalau sekolah Anda tidak ada di daftar, isi ketiga kolom di bawah langsung — hasilnya sama.',
-  'Nama, NPSN, dan alamat yang terisi otomatis boleh diperbaiki manual.',
-  'Tekan Simpan. Nama ini yang muncul di halaman ini dan di daftar pendaftaran pengguna baru.',
-];
 
 // Pesan galat berstatus 5xx disembunyikan errorHandler jadi "Terjadi kesalahan
 // server.", jadi dua kasus sumber luar dipilih dari kodenya. Kode lain (404/429)
@@ -182,7 +174,6 @@ export default function Sekolah() {
   return (
     <div>
       <Title order={2} mb="sm">Sekolah</Title>
-      <Panduan id="sekolah" steps={PANDUAN} />
 
       <Paper withBorder shadow="xs" p="md" mb="md">
         {muat ? <Text c="dimmed">Memuat data sekolah...</Text>
